@@ -762,32 +762,54 @@ elif menu == "📊 Graphiques et Analyses":
 
             st.plotly_chart(fig, use_container_width=True)
 
-        lots_df["Mois"] = lots_df["date_enregistrement"].dt.month_name()
-        prod_mensuelle = lots_df.groupby("Mois")["quantite"].sum().reset_index()
-        mois_ordonne = ["Janvier", "Février", "Mars", "Avril", "Mai", "Juin",
-                        "Juillet", "Août", "Septembre", "Octobre", "Novembre", "Décembre"]
-        prod_mensuelle["Mois"] = pd.Categorical(prod_mensuelle["Mois"], categories=mois_ordonne, ordered=True)
-        prod_mensuelle = prod_mensuelle.sort_values("Mois")
-        x = np.arange(len(prod_mensuelle))
-        y = np.zeros(len(prod_mensuelle))
-        z = prod_mensuelle["quantite"].values
-        i = list(range(len(x) - 2))
-        j = [k + 1 for k in i]
-        k = [k + 2 for k in i]
+        # Graphique prévision linéaire
+        monthly_tests = controle_df.groupby("Mois")["quantite_a_tester"].sum().reset_index()
+        monthly_tests["Mois_Num"] = pd.to_datetime(monthly_tests["Mois"]).map(lambda x: x.toordinal())
+        X = monthly_tests[["Mois_Num"]]
+        y = monthly_tests["quantite_a_tester"]
+        model = LinearRegression()
+        model.fit(X, y)
+        last_month = pd.to_datetime(monthly_tests["Mois"]).max()
+        future_months = [last_month + pd.DateOffset(months=i) for i in range(1, 7)]
+        future_ordinals = [m.toordinal() for m in future_months]
+        future_preds = model.predict(np.array(future_ordinals).reshape(-1, 1))
+        future_df = pd.DataFrame({
+            "Mois": [m.strftime("%Y-%m") for m in future_months],
+            "quantite_a_tester": future_preds,
+            "Source": "Prévision"
+        })
+        monthly_tests["Source"] = "Historique"
+        monthly_tests = monthly_tests[["Mois", "quantite_a_tester", "Source"]]
+        combined_df = pd.concat([monthly_tests, future_df], ignore_index=True)
+        fig = px.line(combined_df, x="Mois", y="quantite_a_tester", color="Source", markers=True,
+                      title="📈 Prévision des tests mensuels", labels={"quantite_a_tester": "Nombre de tests", "Mois": "Mois"})
+        fig.update_layout(xaxis_title="Mois", yaxis_title="Nombre de tests")
+        st.plotly_chart(fig, use_container_width=True)
+
+        # Graphique courbe 3D par jour de la semaine
+        controle_df["Jour_Semaine"] = controle_df["date_controle"].dt.day_name(locale="fr_FR")
+        tests_par_jour = controle_df.groupby("Jour_Semaine")["quantite_a_tester"].sum().reset_index()
+        jours_ordonne = ["Lundi", "Mardi", "Mercredi", "Jeudi", "Vendredi", "Samedi", "Dimanche"]
+        tests_par_jour["Jour_Semaine"] = pd.Categorical(tests_par_jour["Jour_Semaine"], categories=jours_ordonne, ordered=True)
+        tests_par_jour = tests_par_jour.sort_values("Jour_Semaine")
+        x = list(range(len(tests_par_jour)))
+        y = [0] * len(tests_par_jour)
+        z = tests_par_jour["quantite_a_tester"].tolist()
+        labels = tests_par_jour["Jour_Semaine"].tolist()
         fig = go.Figure(data=[
-            go.Mesh3d(x=x, y=y, z=z, i=i, j=j, k=k, intensity=z, colorscale='Plasma', opacity=0.9),
-            go.Scatter3d(x=x, y=y, z=z + 500,
-                         text=[f"{mois}<br>{val} cartes" for mois, val in zip(prod_mensuelle["Mois"], z)],
-                         mode="text", showlegend=False)
+            go.Scatter3d(x=x, y=y, z=z, mode='lines+markers+text',
+                         text=[f"{jour}<br>{val} tests" for jour, val in zip(labels, z)],
+                         line=dict(color='royalblue', width=4), marker=dict(size=6))
         ])
         fig.update_layout(
-            title="📦 Production mensuelle des cartes (Mesh3D)",
+            title="📈 Total des tests journaliers par jour de la semaine (Courbe 3D)",
             scene=dict(
-                xaxis=dict(title="Mois", tickvals=x, ticktext=prod_mensuelle["Mois"]),
+                xaxis=dict(title="Jour", tickvals=x, ticktext=labels),
                 yaxis=dict(title=""),
-                zaxis=dict(title="Quantité produite")
+                zaxis=dict(title="Nombre de tests")
             ),
-            margin=dict(l=0, r=0, b=0, t=40)
+            margin=dict(l=0, r=0, b=0, t=40),
+            scene_camera=dict(eye=dict(x=1.5, y=1.5, z=1.5))
         )
         st.plotly_chart(fig, use_container_width=True)
 
