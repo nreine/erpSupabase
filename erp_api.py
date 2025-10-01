@@ -763,105 +763,105 @@ elif menu == "📊 Graphiques et Analyses":
             st.plotly_chart(fig, use_container_width=True)
 
     
-        import plotly.express as px
-        from sklearn.linear_model import LinearRegression
-        import numpy as np
+            import plotly.express as px
+            from sklearn.linear_model import LinearRegression
+            import numpy as np
 
 # Préparation des données
-        controle_df["date_controle"] = pd.to_datetime(controle_df["date_controle"], errors="coerce")
-        controle_df["Mois"] = controle_df["date_controle"].dt.to_period("M").astype(str)
-        monthly_tests = controle_df.groupby("Mois")["quantite_a_tester"].sum().reset_index()
+            controle_df["date_controle"] = pd.to_datetime(controle_df["date_controle"], errors="coerce")
+            controle_df["Mois"] = controle_df["date_controle"].dt.to_period("M").astype(str)
+            monthly_tests = controle_df.groupby("Mois")["quantite_a_tester"].sum().reset_index()
 
 # Transformation pour la régression
-        monthly_tests["Mois_Num"] = pd.to_datetime(monthly_tests["Mois"]).map(lambda x: x.toordinal())
-        X = monthly_tests[["Mois_Num"]]
-        y = monthly_tests["quantite_a_tester"]
+            monthly_tests["Mois_Num"] = pd.to_datetime(monthly_tests["Mois"]).map(lambda x: x.toordinal())
+            X = monthly_tests[["Mois_Num"]]
+            y = monthly_tests["quantite_a_tester"]
 
 # Modèle de régression
-        model = LinearRegression()
-        model.fit(X, y)
+            model = LinearRegression()
+            model.fit(X, y)
 
 # Prévision pour les 6 prochains mois
-        last_month = pd.to_datetime(monthly_tests["Mois"]).max()
-        future_months = [last_month + pd.DateOffset(months=i) for i in range(1, 7)]
-        future_ordinals = [m.toordinal() for m in future_months]
-        future_preds = model.predict(np.array(future_ordinals).reshape(-1, 1))
+            last_month = pd.to_datetime(monthly_tests["Mois"]).max()
+            future_months = [last_month + pd.DateOffset(months=i) for i in range(1, 7)]
+            future_ordinals = [m.toordinal() for m in future_months]
+            future_preds = model.predict(np.array(future_ordinals).reshape(-1, 1))
 
 # Données prévisionnelles
-        future_df = pd.DataFrame({
-            "Mois": [m.strftime("%Y-%m") for m in future_months],
-            "quantite_a_tester": future_preds,
-            "Source": "Prévision"
-        })
+            future_df = pd.DataFrame({
+                "Mois": [m.strftime("%Y-%m") for m in future_months],
+                "quantite_a_tester": future_preds,
+                "Source": "Prévision"
+             })
 
 # Données historiques
-        monthly_tests["Source"] = "Historique"
-        monthly_tests = monthly_tests[["Mois", "quantite_a_tester", "Source"]]
+             monthly_tests["Source"] = "Historique"
+             monthly_tests = monthly_tests[["Mois", "quantite_a_tester", "Source"]]
 
 # Fusion
-        combined_df = pd.concat([monthly_tests, future_df], ignore_index=True)
+             combined_df = pd.concat([monthly_tests, future_df], ignore_index=True)
 
 # Graphique
-        fig = px.line(
-            combined_df,
-            x="Mois",
-            y="quantite_a_tester",
-            color="Source",
-            markers=True,
-            title="📈 Prévision des tests mensuels de contrôle qualité",
-            labels={"quantite_a_tester": "Nombre de tests", "Mois": "Mois"}
-        )
+             fig = px.line(
+                 combined_df,
+                 x="Mois",
+                 y="quantite_a_tester",
+                 color="Source",
+                 markers=True,
+                 title="📈 Prévision des tests mensuels de contrôle qualité",
+                 labels={"quantite_a_tester": "Nombre de tests", "Mois": "Mois"}
+               )
 
-        fig.update_layout(xaxis_title="Mois", yaxis_title="Nombre de tests")
-        st.plotly_chart(fig, use_container_width=True)
+               fig.update_layout(xaxis_title="Mois", yaxis_title="Nombre de tests")
+               st.plotly_chart(fig, use_container_width=True)
 
 
-        st.subheader("Tests par type de carte")
-        st.bar_chart(controle_df["type_carte"].value_counts())
+               st.subheader("Tests par type de carte")
+               st.bar_chart(controle_df["type_carte"].value_counts())
 
     
     
-        controle_df["date_controle"] = pd.to_datetime(controle_df["date_controle"], errors="coerce")
-        controle_df["Jour_Semaine"] = controle_df["date_controle"].dt.day_name()
-        controle_df["Jour_Semaine"] = controle_df["Jour_Semaine"].map({'Monday': 'Lundi', 'Tuesday': 'Mardi', 'Wednesday': 'Mercredi', 'Thursday': 'Jeudi', 'Friday': 'Vendredi', 'Saturday': 'Samedi', 'Sunday': 'Dimanche'})
-        tests_par_jour = controle_df.groupby("Jour_Semaine")["quantite_a_tester"].sum().reset_index()
+              controle_df["date_controle"] = pd.to_datetime(controle_df["date_controle"], errors="coerce")
+              controle_df["Jour_Semaine"] = controle_df["date_controle"].dt.day_name()
+              controle_df["Jour_Semaine"] = controle_df["Jour_Semaine"].map({'Monday': 'Lundi', 'Tuesday': 'Mardi', 'Wednesday': 'Mercredi', 'Thursday': 'Jeudi', 'Friday': 'Vendredi', 'Saturday': 'Samedi', 'Sunday': 'Dimanche'})
+              tests_par_jour = controle_df.groupby("Jour_Semaine")["quantite_a_tester"].sum().reset_index()
     
-        import plotly.graph_objects as go
+              import plotly.graph_objects as go
 
 # Ordre des jours
-        jours_ordonne = ["Lundi", "Mardi", "Mercredi", "Jeudi", "Vendredi", "Samedi", "Dimanche"]
-        tests_par_jour["Jour_Semaine"] = pd.Categorical(tests_par_jour["Jour_Semaine"], categories=jours_ordonne, ordered=True)
-        tests_par_jour = tests_par_jour.sort_values("Jour_Semaine")
+              jours_ordonne = ["Lundi", "Mardi", "Mercredi", "Jeudi", "Vendredi", "Samedi", "Dimanche"]
+              tests_par_jour["Jour_Semaine"] = pd.Categorical(tests_par_jour["Jour_Semaine"], categories=jours_ordonne, ordered=True)
+              tests_par_jour = tests_par_jour.sort_values("Jour_Semaine")
 
-        x = list(range(len(tests_par_jour)))
-        y = [0] * len(tests_par_jour)
-        z = tests_par_jour["quantite_a_tester"].tolist()
-        labels = tests_par_jour["Jour_Semaine"].tolist()
+              x = list(range(len(tests_par_jour)))
+              y = [0] * len(tests_par_jour)
+              z = tests_par_jour["quantite_a_tester"].tolist()
+              labels = tests_par_jour["Jour_Semaine"].tolist()
 
-        fig = go.Figure(data=[
-            go.Scatter3d(
-                x=x,
-                y=y,
-                z=z,
-                mode='lines+markers+text',
-                text=[f"{jour}<br>{val} tests" for jour, val in zip(labels, z)],
-                line=dict(color='royalblue', width=4),
-                marker=dict(size=6)
-            )
-        ])
+              fig = go.Figure(data=[
+                  go.Scatter3d(
+                     x=x,
+                     y=y,
+                     z=z,
+                     mode='lines+markers+text',
+                     text=[f"{jour}<br>{val} tests" for jour, val in zip(labels, z)],
+                     line=dict(color='royalblue', width=4),
+                     marker=dict(size=6)
+                   )
+               ])
 
-        fig.update_layout(
-            title="📈 Total des tests journaliers par jour de la semaine (Courbe 3D)",
-            scene=dict(
-                xaxis=dict(title="Jour", tickvals=x, ticktext=labels),
-                yaxis=dict(title=""),
-                zaxis=dict(title="Nombre de tests")
-            ),
-            margin=dict(l=0, r=0, b=0, t=40),
-            scene_camera=dict(eye=dict(x=1.5, y=1.5, z=1.5))
-        )
+               fig.update_layout(
+                   title="📈 Total des tests journaliers par jour de la semaine (Courbe 3D)",
+                   scene=dict(
+                       xaxis=dict(title="Jour", tickvals=x, ticktext=labels),
+                       yaxis=dict(title=""),
+                       zaxis=dict(title="Nombre de tests")
+                    ),
+                    margin=dict(l=0, r=0, b=0, t=40),
+                    scene_camera=dict(eye=dict(x=1.5, y=1.5, z=1.5))
+                 )
 
-        st.plotly_chart(fig, use_container_width=True)
+                 st.plotly_chart(fig, use_container_width=True)
 
         # KPIs temporels
         st.header("📅 Évolution temporelle")
