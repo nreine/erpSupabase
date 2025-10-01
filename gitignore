@@ -1,0 +1,46 @@
+# 🔒 Fichiers sensibles
+.streamlit/secrets.toml
+
+# 📦 Environnements virtuels
+venv/
+env/
+__pycache__/
+*.py[cod]
+*.pyo
+*.pyd
+
+# 🗂️ Fichiers temporaires
+*.log
+*.tmp
+*.bak
+*.swp
+*.DS_Store
+Thumbs.db
+
+# 📊 Fichiers de données
+*.sqlite3
+*.db
+*.csv
+*.xlsx
+*.xls
+
+# 🖼️ Fichiers générés
+*.png
+*.jpg
+*.jpeg
+*.pdf
+
+# ⚙️ Fichiers de configuration IDE
+.vscode/
+.idea/
+*.code-workspace
+
+# 📁 Dossiers de cache
+.cache/
+__pycache__/
+.ipynb_checkpoints/
+
+# 📦 Dépendances compilées
+build/
+dist/
+*.egg-info/
