@@ -723,42 +723,42 @@ elif menu == "📊 Graphiques et Analyses":
             z_tip = height
 
     # Construction des 4 faces triangulaires
-            for j in range(4):
-                x_face = [x_base[j], x_base[(j + 1) % 4], x_tip]
-                y_face = [y_base[j], y_base[(j + 1) % 4], y_tip]
-                z_face = [z_base[j], z_base[(j + 1) % 4], z_tip]
+        for j in range(4):
+            x_face = [x_base[j], x_base[(j + 1) % 4], x_tip]
+            y_face = [y_base[j], y_base[(j + 1) % 4], y_tip]
+            z_face = [z_base[j], z_base[(j + 1) % 4], z_tip]
 
-                fig.add_trace(go.Mesh3d(
-                    x=x_face,
-                    y=y_face,
-                    z=z_face,
-                    color='lightcoral',
-                    opacity=0.9,
-                    showscale=False
-                ))
-
-    # Étiquette au sommet
-            fig.add_trace(go.Scatter3d(
-                x=[i],
-                y=[0],
-                z=[height + 100],
-                text=[f"{label}<br>{int(height)} tests"],
-                mode="text",
-                showlegend=False
+            fig.add_trace(go.Mesh3d(
+                x=x_face,
+                y=y_face,
+                z=z_face,
+                color='lightcoral',
+                opacity=0.9,
+                showscale=False
             ))
 
+    # Étiquette au sommet
+        fig.add_trace(go.Scatter3d(
+            x=[i],
+            y=[0],
+            z=[height + 100],
+            text=[f"{label}<br>{int(height)} tests"],
+            mode="text",
+            showlegend=False
+        ))
+
 # Mise en page
-            fig.update_layout(
-                title="📊 Nombre total de tests de contrôle qualité réalisés par mois (Pyramides 3D)",
-                scene=dict(
-                    xaxis=dict(title="Mois", tickvals=list(range(len(tests_mensuels))), ticktext=tests_mensuels["Mois"].tolist()),
-                    yaxis=dict(title=""),
-                    zaxis=dict(title="Nombre de tests")
-                 ),
-                 margin=dict(l=0, r=0, b=0, t=40),
-                 scene_camera=dict(eye=dict(x=1.8, y=1.8, z=2.5)),
-                 autosize=True
-            )
+        fig.update_layout(
+            title="📊 Nombre total de tests de contrôle qualité réalisés par mois (Pyramides 3D)",
+            scene=dict(
+                xaxis=dict(title="Mois", tickvals=list(range(len(tests_mensuels))), ticktext=tests_mensuels["Mois"].tolist()),
+                yaxis=dict(title=""),
+                zaxis=dict(title="Nombre de tests")
+                ),
+                margin=dict(l=0, r=0, b=0, t=40),
+                scene_camera=dict(eye=dict(x=1.8, y=1.8, z=2.5)),
+                autosize=True
+        )
 
         st.plotly_chart(fig, use_container_width=True)
 
