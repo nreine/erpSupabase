@@ -812,42 +812,42 @@ elif menu == "📊 Graphiques et Analyses":
                  labels={"quantite_a_tester": "Nombre de tests", "Mois": "Mois"}
              )
 
-             fig.update_layout(xaxis_title="Mois", yaxis_title="Nombre de tests")
-             st.plotly_chart(fig, use_container_width=True)
+            fig.update_layout(xaxis_title="Mois", yaxis_title="Nombre de tests")
+            st.plotly_chart(fig, use_container_width=True)
 
 
-             st.subheader("Tests par type de carte")
-             st.bar_chart(controle_df["type_carte"].value_counts())
+            st.subheader("Tests par type de carte")
+            st.bar_chart(controle_df["type_carte"].value_counts())
 
     
     
-             controle_df["date_controle"] = pd.to_datetime(controle_df["date_controle"], errors="coerce")
-             controle_df["Jour_Semaine"] = controle_df["date_controle"].dt.day_name()
-             controle_df["Jour_Semaine"] = controle_df["Jour_Semaine"].map({'Monday': 'Lundi', 'Tuesday': 'Mardi', 'Wednesday': 'Mercredi', 'Thursday': 'Jeudi', 'Friday': 'Vendredi', 'Saturday': 'Samedi', 'Sunday': 'Dimanche'})
-             tests_par_jour = controle_df.groupby("Jour_Semaine")["quantite_a_tester"].sum().reset_index()
+            controle_df["date_controle"] = pd.to_datetime(controle_df["date_controle"], errors="coerce")
+            controle_df["Jour_Semaine"] = controle_df["date_controle"].dt.day_name()
+            controle_df["Jour_Semaine"] = controle_df["Jour_Semaine"].map({'Monday': 'Lundi', 'Tuesday': 'Mardi', 'Wednesday': 'Mercredi', 'Thursday': 'Jeudi', 'Friday': 'Vendredi', 'Saturday': 'Samedi', 'Sunday': 'Dimanche'})
+            tests_par_jour = controle_df.groupby("Jour_Semaine")["quantite_a_tester"].sum().reset_index()
     
-             import plotly.graph_objects as go
+            import plotly.graph_objects as go
 
 # Ordre des jours
-             jours_ordonne = ["Lundi", "Mardi", "Mercredi", "Jeudi", "Vendredi", "Samedi", "Dimanche"]
-             tests_par_jour["Jour_Semaine"] = pd.Categorical(tests_par_jour["Jour_Semaine"], categories=jours_ordonne, ordered=True)
-             tests_par_jour = tests_par_jour.sort_values("Jour_Semaine")
+            jours_ordonne = ["Lundi", "Mardi", "Mercredi", "Jeudi", "Vendredi", "Samedi", "Dimanche"]
+            tests_par_jour["Jour_Semaine"] = pd.Categorical(tests_par_jour["Jour_Semaine"], categories=jours_ordonne, ordered=True)
+            tests_par_jour = tests_par_jour.sort_values("Jour_Semaine")
 
-             x = list(range(len(tests_par_jour)))
-             y = [0] * len(tests_par_jour)
-             z = tests_par_jour["quantite_a_tester"].tolist()
-             labels = tests_par_jour["Jour_Semaine"].tolist()
+            x = list(range(len(tests_par_jour)))
+            y = [0] * len(tests_par_jour)
+            z = tests_par_jour["quantite_a_tester"].tolist()
+            labels = tests_par_jour["Jour_Semaine"].tolist()
 
-             fig = go.Figure(data=[
-                 go.Scatter3d(
-                    x=x,
-                    y=y,
-                    z=z,
-                    mode='lines+markers+text',
-                    text=[f"{jour}<br>{val} tests" for jour, val in zip(labels, z)],
-                    line=dict(color='royalblue', width=4),
-                    marker=dict(size=6)
-                   )
+            fig = go.Figure(data=[
+                go.Scatter3d(
+                   x=x,
+                   y=y,
+                   z=z,
+                   mode='lines+markers+text',
+                   text=[f"{jour}<br>{val} tests" for jour, val in zip(labels, z)],
+                   line=dict(color='royalblue', width=4),
+                   marker=dict(size=6)
+                  )
                ])
 
                fig.update_layout(
