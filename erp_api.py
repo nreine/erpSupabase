@@ -560,16 +560,16 @@ elif menu == "📊 Graphiques et Analyses":
                 showlegend=False
               )
            ])
-           fig.update_layout(
-               title="📦 Production mensuelle des cartes (Mesh3D)",
-               scene=dict(
-                   xaxis=dict(title="Mois", tickvals=x, ticktext=production_mensuelle["Mois"]),
-                   yaxis=dict(title=""),
-                   zaxis=dict(title="Quantité produite")
-               ),
-               margin=dict(l=0, r=0, b=0, t=40)
-            )
-            st.plotly_chart(fig, use_container_width=True)
+        fig.update_layout(
+            title="📦 Production mensuelle des cartes (Mesh3D)",
+            scene=dict(
+                xaxis=dict(title="Mois", tickvals=x, ticktext=production_mensuelle["Mois"]),
+                yaxis=dict(title=""),
+                zaxis=dict(title="Quantité produite")
+            ),
+            margin=dict(l=0, r=0, b=0, t=40)
+        )
+        st.plotly_chart(fig, use_container_width=True)
 
         # Graphique cylindres 3D par trimestre
         lots_df["Année"] = lots_df["date_enregistrement"].dt.year
