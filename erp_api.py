@@ -115,14 +115,26 @@ def enregistrer_lot():
                 st.success("✅ Lot enregistré avec succès.")
                 st.rerun()
 
-# Affichage du menu
-st.image("imageExcelis.png", width=200)
-st.markdown("<h6 style='text-align: center; color: grey;'><em>Département Cartes et Partenariat DCP</em></h6>", unsafe_allow_html=True)
-menu = st.sidebar.selectbox("📋 Menu", ["➕ Enregistrement des lots","📋 Visualisation des lots","✏️ Modification / Suppression",
-                                        "🧪 Contrôle qualité","🗂 Inventaire des tests","📊 Graphiques et Analyses",
-                                        "📦 Conditionnement des cartes","🗂 Inventaire des conditionnements","⚙️ Gestion des agences",
-                                        "🚚 Expédition des lots","📇 Annuaire des livreurs","📦 Visualisation des expéditions",
-                                        "🔐 Gestion des comptes utilisateurs",])
+# Menu latéral avec icône burger
+with st.sidebar:
+    st.image("imageExcelis.png", width=200)
+    st.markdown("<h6 style='text-align: center; color: grey;'><em>Département Cartes et Partenariat DCP</em></h6>", unsafe_allow_html=True)
+    
+    menu = st.selectbox("Naviguer vers :", [
+        "➕ Enregistrement des lots",
+        "📋 Visualisation des lots",
+        "✏️ Modification / Suppression",
+        "🧪 Contrôle qualité",
+        "🗂 Inventaire des tests",
+        "📊 Graphiques et Analyses",
+        "📦 Conditionnement des cartes",
+        "🗂 Inventaire des conditionnements",
+        "⚙️ Gestion des agences",
+        "🚚 Expédition des lots",
+        "📇 Annuaire des livreurs",
+        "📦 Visualisation des expéditions",
+        "🔐 Gestion des comptes utilisateurs"
+    ])
 
 if menu == "➕ Enregistrement des lots":
     enregistrer_lot()
