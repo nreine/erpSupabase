@@ -738,14 +738,14 @@ elif menu == "📊 Graphiques et Analyses":
                 ))
 
     # Étiquette au sommet
-              fig.add_trace(go.Scatter3d(
-                  x=[i],
-                  y=[0],
-                  z=[height + 100],
-                  text=[f"{label}<br>{int(height)} tests"],
-                  mode="text",
-                  showlegend=False
-               ))
+            fig.add_trace(go.Scatter3d(
+                x=[i],
+                y=[0],
+                z=[height + 100],
+                text=[f"{label}<br>{int(height)} tests"],
+                mode="text",
+                showlegend=False
+            ))
 
 # Mise en page
             fig.update_layout(
