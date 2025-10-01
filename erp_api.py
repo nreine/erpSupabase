@@ -516,34 +516,60 @@ elif menu == "📊 Graphiques et Analyses":
         st.plotly_chart(fig, use_container_width=True)
 
         # Graphique Mesh3D production mensuelle
+        import plotly.graph_objects as go
+        import numpy as np
+    
+# Conversion des dates et extraction du mois
+        lots_df["date_enregistrement"] = pd.to_datetime(lots_df["date_enregistrement"], errors="coerce")
         lots_df["Mois"] = lots_df["date_enregistrement"].dt.month_name()
-        prod_mensuelle = lots_df.groupby("Mois")["quantite"].sum().reset_index()
+        lots_df["Mois"] = lots_df["Mois"].map({'January': 'Janvier', 'February': 'Février', 'March': 'Mars', 'April': 'Avril', 'May': 'Mai', 'June': 'Juin', 'July': 'Juillet', 'August': 'Août', 'September': 'Septembre', 'October': 'Octobre', 'November': 'Novembre', 'December': 'Décembre'})
+
+# Agrégation mensuelle
+        production_mensuelle = lots_df.groupby("Mois")["quantite"].sum().reset_index()
+
+# Ordre des mois
         mois_ordonne = ["Janvier", "Février", "Mars", "Avril", "Mai", "Juin",
-                        "Juillet", "Août", "Septembre", "Octobre", "Novembre", "Décembre"]
-        prod_mensuelle["Mois"] = pd.Categorical(prod_mensuelle["Mois"], categories=mois_ordonne, ordered=True)
-        prod_mensuelle = prod_mensuelle.sort_values("Mois")
-        x = np.arange(len(prod_mensuelle))
-        y = np.zeros(len(prod_mensuelle))
-        z = prod_mensuelle["quantite"].values
+                   "Juillet", "Août", "Septembre", "Octobre", "Novembre", "Décembre"]
+        production_mensuelle["Mois"] = pd.Categorical(production_mensuelle["Mois"], categories=mois_ordonne, ordered=True)
+        production_mensuelle = production_mensuelle.sort_values("Mois")
+
+# Coordonnées Mesh3D
+        x = np.arange(len(production_mensuelle))
+        y = np.zeros(len(production_mensuelle))
+        z = production_mensuelle["quantite"].values
         i = list(range(len(x) - 2))
         j = [k + 1 for k in i]
         k = [k + 2 for k in i]
+
+# Graphique Mesh3D
         fig = go.Figure(data=[
-            go.Mesh3d(x=x, y=y, z=z, i=i, j=j, k=k, intensity=z, colorscale='Plasma', opacity=0.9),
-            go.Scatter3d(x=x, y=y, z=z + 500,
-                         text=[f"{mois}<br>{val} cartes" for mois, val in zip(prod_mensuelle["Mois"], z)],
-                         mode="text", showlegend=False)
-        ])
-        fig.update_layout(
-            title="📦 Production mensuelle des cartes (Mesh3D)",
-            scene=dict(
-                xaxis=dict(title="Mois", tickvals=x, ticktext=prod_mensuelle["Mois"]),
-                yaxis=dict(title=""),
-                zaxis=dict(title="Quantité produite")
-            ),
-            margin=dict(l=0, r=0, b=0, t=40)
-        )
-        st.plotly_chart(fig, use_container_width=True)
+            go.Mesh3d(
+               x=x, y=y, z=z,
+               i=i, j=j, k=k,
+               intensity=z,
+               colorscale='Plasma',  # Palette personnalisée
+               opacity=0.9,
+               name="Production mensuelle"
+             ),
+             go.Scatter3d(
+                x=x,
+                y=y,
+                z=z + 500,
+                text=[f"{mois}<br>{val} cartes" for mois, val in zip(production_mensuelle["Mois"], z)],
+                mode="text",
+                showlegend=False
+              )
+           ])
+           fig.update_layout(
+               title="📦 Production mensuelle des cartes (Mesh3D)",
+               scene=dict(
+                   xaxis=dict(title="Mois", tickvals=x, ticktext=production_mensuelle["Mois"]),
+                   yaxis=dict(title=""),
+                   zaxis=dict(title="Quantité produite")
+               ),
+               margin=dict(l=0, r=0, b=0, t=40)
+            )
+            st.plotly_chart(fig, use_container_width=True)
 
         # Graphique cylindres 3D par trimestre
         lots_df["Année"] = lots_df["date_enregistrement"].dt.year
