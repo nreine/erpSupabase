@@ -25,7 +25,7 @@ def login_form():
     st.markdown("<div style='text-align: center;'>Veuillez entrer vos identifiants pour accéder à l'application.</div>", unsafe_allow_html=True)
     st.divider()
     with st.form("login_form"):
-        st.image("C:/Users/USER/Desktop/Images/imageExcelis.png", width=200)
+        st.image("imageExcelis.png", width=200)
         st.markdown("<h6 style='text-align: center; color: grey;'><em>Département Cartes et Partenariat DCP</em></h6>", unsafe_allow_html=True)
         st.markdown("<div style='display: flex; justify-content: center;'>", unsafe_allow_html=True)
         col1, col2 = st.columns([1, 2])
@@ -116,7 +116,7 @@ def enregistrer_lot():
                 st.rerun()
 
 # Affichage du menu
-st.sidebar.image("C:/Users/USER/Desktop/Images/imageExcelis.png")
+st.image("imageExcelis.png", width=200)
 st.markdown("<h1 style='text-align: center;'>ERP Lots - Supabase</h1>", unsafe_allow_html=True)
 menu = st.sidebar.selectbox("📋 Menu", ["➕ Enregistrement des lots","📋 Visualisation des lots","✏️ Modification / Suppression",
                                         "🧪 Contrôle qualité","🗂 Inventaire des tests","📊 Graphiques et Analyses",
