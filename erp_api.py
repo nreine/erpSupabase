@@ -861,7 +861,7 @@ elif menu == "📊 Graphiques et Analyses":
                 scene_camera=dict(eye=dict(x=1.5, y=1.5, z=1.5))
             )
 
-             st.plotly_chart(fig, use_container_width=True)
+        st.plotly_chart(fig, use_container_width=True)
 
         # KPIs temporels
         st.header("📅 Évolution temporelle")
