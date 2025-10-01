@@ -357,7 +357,7 @@ elif menu == "🗂 Inventaire des tests":
     else:
         df["date_controle"] = pd.to_datetime(df["date_controle"])
         df["Année"] = df["date_controle"].dt.year
-        df["Mois"] = df["date_controle"].dt.month_name(locale="fr_FR")
+        df["Mois"] = df["date_controle"].dt.month_name()
         df["Trimestre"] = df["date_controle"].dt.quarter
         df["Semaine"] = df["date_controle"].dt.isocalendar().week
         df["Jour"] = df["date_controle"].dt.day
@@ -521,7 +521,7 @@ elif menu == "📊 Graphiques et Analyses":
         st.plotly_chart(fig, use_container_width=True)
 
         # Graphique Mesh3D production mensuelle
-        lots_df["Mois"] = lots_df["date_enregistrement"].dt.month_name(locale="fr_FR")
+        lots_df["Mois"] = lots_df["date_enregistrement"].dt.month_name()
         prod_mensuelle = lots_df.groupby("Mois")["quantite"].sum().reset_index()
         mois_ordonne = ["Janvier", "Février", "Mars", "Avril", "Mai", "Juin",
                         "Juillet", "Août", "Septembre", "Octobre", "Novembre", "Décembre"]
