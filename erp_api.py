@@ -787,7 +787,7 @@ elif menu == "📊 Graphiques et Analyses":
         st.plotly_chart(fig, use_container_width=True)
 
         # Graphique courbe 3D par jour de la semaine
-        controle_df["Jour_Semaine"] = controle_df["date_controle"].dt.day_name(locale="fr_FR")
+        controle_df["Jour_Semaine"] = controle_df["date_controle"].dt.day_name()
         tests_par_jour = controle_df.groupby("Jour_Semaine")["quantite_a_tester"].sum().reset_index()
         jours_ordonne = ["Lundi", "Mardi", "Mercredi", "Jeudi", "Vendredi", "Samedi", "Dimanche"]
         tests_par_jour["Jour_Semaine"] = pd.Categorical(tests_par_jour["Jour_Semaine"], categories=jours_ordonne, ordered=True)
