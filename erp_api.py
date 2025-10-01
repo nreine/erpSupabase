@@ -850,18 +850,18 @@ elif menu == "📊 Graphiques et Analyses":
                   )
                ])
 
-               fig.update_layout(
-                   title="📈 Total des tests journaliers par jour de la semaine (Courbe 3D)",
-                   scene=dict(
-                       xaxis=dict(title="Jour", tickvals=x, ticktext=labels),
-                       yaxis=dict(title=""),
-                       zaxis=dict(title="Nombre de tests")
-                    ),
-                    margin=dict(l=0, r=0, b=0, t=40),
-                    scene_camera=dict(eye=dict(x=1.5, y=1.5, z=1.5))
-                 )
+            fig.update_layout(
+                title="📈 Total des tests journaliers par jour de la semaine (Courbe 3D)",
+                scene=dict(
+                    xaxis=dict(title="Jour", tickvals=x, ticktext=labels),
+                    yaxis=dict(title=""),
+                    zaxis=dict(title="Nombre de tests")
+                ),
+                margin=dict(l=0, r=0, b=0, t=40),
+                scene_camera=dict(eye=dict(x=1.5, y=1.5, z=1.5))
+            )
 
-                 st.plotly_chart(fig, use_container_width=True)
+             st.plotly_chart(fig, use_container_width=True)
 
         # KPIs temporels
         st.header("📅 Évolution temporelle")
