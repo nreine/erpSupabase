@@ -153,7 +153,6 @@ elif menu == "📋 Visualisation des lots":
     supabase = create_client(url, key)
 
     st.markdown("## 📋 Liste des lots enregistrés")
-    st.divider()
 
     # Récupération des données depuis Supabase
     response = supabase.table("lots").select("*").execute()
@@ -199,7 +198,6 @@ elif menu == "✏️ Modification / Suppression":
     supabase = create_client(url, key)
 
     st.markdown("## ✏️ Modifier ou supprimer un lot")
-    st.divider()
 
     # Récupération des lots
     response = supabase.table("lots").select("*").execute()
@@ -263,7 +261,6 @@ elif menu == "🧪 Contrôle qualité":
     supabase = create_client(url, key)
 
     st.markdown("## 🧪 Enregistrement d'un contrôle qualité")
-    st.divider()
 
     # Récupération des lots
     response = supabase.table("lots").select("id", "nom_lot").execute()
@@ -331,7 +328,6 @@ elif menu == "🧪 Contrôle qualité":
 
 elif menu == "🗂 Inventaire des tests":
     st.markdown("## 🗂 Inventaire des tests de contrôle qualité")
-    st.divider()
 
     # Récupération des données depuis Supabase
     response = supabase.table("controle_qualite").select(
@@ -446,7 +442,6 @@ elif menu == "🗂 Inventaire des tests":
 # Bloc Graphiques et Analyses
 elif menu == "📊 Graphiques et Analyses":
     st.markdown("## 📊 Tableau de bord des indicateurs")
-    st.divider()
 
     # Récupération des données
     lots_data = supabase.table("lots").select("*").execute().data
@@ -747,7 +742,6 @@ elif menu == "📊 Graphiques et Analyses":
 # Bloc Conditionnement des cartes
 if menu == "📦 Conditionnement des cartes":
     st.markdown("## 📦 Conditionnement des cartes")
-    st.divider()
 
     # Sélection de la date
     selected_date = st.date_input("📅 Sélectionnez une date", value=date.today())
@@ -858,7 +852,6 @@ if menu == "📦 Conditionnement des cartes":
 #Inventaire de conditionnements
 elif menu == "🗂 Inventaire des conditionnements":
     st.markdown("## 🗂 Inventaire des conditionnements")
-    st.divider()
 
     response = supabase.table("conditionnement").select("*").execute()
     data = response.data
@@ -945,7 +938,6 @@ elif menu == "🗂 Inventaire des conditionnements":
 #Module gestion des agences
 elif menu == "⚙️ Gestion des agences":
     st.markdown("## ⚙️ Gestion des agences de livraison")
-    st.divider()
 
     # 📋 Liste des agences existantes
     st.subheader("📋 Liste des agences existantes")
@@ -1006,7 +998,6 @@ elif menu == "⚙️ Gestion des agences":
 #Module expédition des lots
 elif menu == "🚚 Expédition des lots":
     st.markdown("## 🚚 Préparation des expéditions")
-    st.divider()
 
     # 🔍 Sélection du lot
     try:
@@ -1082,7 +1073,6 @@ elif menu == "🚚 Expédition des lots":
 #Module annuaire de livraison
 elif menu == "📇 Annuaire des livreurs":
     st.markdown("## 📇 Annuaire des livreurs par agence")
-    st.divider()
 
     # 🔍 Récupération des livreurs
     try:
@@ -1170,7 +1160,6 @@ elif menu == "📇 Annuaire des livreurs":
 
 elif menu == "📦 Visualisation des expéditions":
     st.markdown("## 📦 Indicateurs des expéditions")
-    st.divider()
 
     # 🔍 Récupération des expéditions
     try:
