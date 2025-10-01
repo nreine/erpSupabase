@@ -760,7 +760,7 @@ elif menu == "📊 Graphiques et Analyses":
                  autosize=True
             )
 
-            st.plotly_chart(fig, use_container_width=True)
+        st.plotly_chart(fig, use_container_width=True)
 
         # Graphique prévision linéaire
         monthly_tests = controle_df.groupby("Mois")["quantite_a_tester"].sum().reset_index()
