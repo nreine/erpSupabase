@@ -115,10 +115,12 @@ def enregistrer_lot():
                 st.success("✅ Lot enregistré avec succès.")
                 st.rerun()
 
+
+st.markdown("<h1 style='text-align: center;'>ERP Lots - Supabase</h1>", unsafe_allow_html=True)
 # Menu latéral avec icône burger
 with st.sidebar:
     st.image("imageExcelis.png", width=200)
-    st.markdown("<h1 style='text-align: center;'>ERP Lots - Supabase</h1>", unsafe_allow_html=True)
+    st.markdown("<h6 style='text-align: center; color: grey;'><em>Département Cartes et Partenariat DCP</em></h6>", unsafe_allow_html=True)
     
     menu = st.selectbox("Naviguer vers :", [
         "➕ Enregistrement des lots",
