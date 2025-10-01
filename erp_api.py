@@ -693,34 +693,34 @@ elif menu == "📊 Graphiques et Analyses":
         st.plotly_chart(fig, use_container_width=True)
 
         # Graphique prévision linéaire
-        import numpy as np
-        import plotly.graph_objects as go
+    import numpy as np
+    import plotly.graph_objects as go
 
 # Conversion des dates
-        controle_df["date_controle"] = pd.to_datetime(controle_df["date_controle"], errors="coerce")
-        controle_df["Mois"] = controle_df["date_controle"].dt.to_period("M").astype(str)
+    controle_df["date_controle"] = pd.to_datetime(controle_df["date_controle"], errors="coerce")
+    controle_df["Mois"] = controle_df["date_controle"].dt.to_period("M").astype(str)
 
 # Agrégation mensuelle
-        tests_mensuels = controle_df.groupby("Mois")["quantite_a_tester"].sum().reset_index()
+    tests_mensuels = controle_df.groupby("Mois")["quantite_a_tester"].sum().reset_index()
 
 # Paramètres de la pyramide
-        fig = go.Figure()
-        base_size = 0.5
-        n_points = 4  # base carrée
+    fig = go.Figure()
+    base_size = 0.5
+    n_points = 4  # base carrée
 
-        for i, row in tests_mensuels.iterrows():
-            label = row["Mois"]
-            height = row["quantite_a_tester"]
+    for i, row in tests_mensuels.iterrows():
+        label = row["Mois"]
+        height = row["quantite_a_tester"]
 
     # Coordonnées de la base carrée
-            x_base = np.array([i - base_size, i + base_size, i + base_size, i - base_size])
-            y_base = np.array([-base_size, -base_size, base_size, base_size])
-            z_base = np.zeros(4)
+        x_base = np.array([i - base_size, i + base_size, i + base_size, i - base_size])
+        y_base = np.array([-base_size, -base_size, base_size, base_size])
+        z_base = np.zeros(4)
 
     # Coordonnées du sommet
-            x_tip = i
-            y_tip = 0
-            z_tip = height
+        x_tip = i
+        y_tip = 0
+        z_tip = height
 
     # Construction des 4 faces triangulaires
         for j in range(4):
