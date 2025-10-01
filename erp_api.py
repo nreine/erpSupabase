@@ -116,7 +116,7 @@ def enregistrer_lot():
                 st.rerun()
 
 # Affichage du menu
-st.image("imageExcelis.png", width=200)
+st.image("imageExcelis.png")
 st.markdown("<h1 style='text-align: center;'>ERP Lots - Supabase</h1>", unsafe_allow_html=True)
 menu = st.sidebar.selectbox("📋 Menu", ["➕ Enregistrement des lots","📋 Visualisation des lots","✏️ Modification / Suppression",
                                         "🧪 Contrôle qualité","🗂 Inventaire des tests","📊 Graphiques et Analyses",
