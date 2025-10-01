@@ -116,7 +116,7 @@ def enregistrer_lot():
                 st.rerun()
 
 
-st.markdown("<h1 style='text-align: center;'>ERP Lots - Supabase</h1>", unsafe_allow_html=True)
+st.markdown("<h1 style='text-align: center;'>Gestion des tâches manuelles section DCP</h1>", unsafe_allow_html=True)
 # Menu latéral avec icône burger
 with st.sidebar:
     st.image("imageExcelis.png", width=200)
