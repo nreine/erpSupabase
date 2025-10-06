@@ -307,7 +307,10 @@ elif menu == "🧪 Contrôle qualité":
 
     if st.button("Enregistrer le contrôle qualité"):
         for type_carte in types_selectionnes:
+            last_id_data = supabase.table("controle_qualite").select("id").order("id", desc=True).limit(1).execute().data
+            next_id = (last_id_data[0]["id"] + 1) if last_id_data else 1
             supabase.table("controle_qualite").insert({
+                "id": next_id,
                 "lot_id": lot_id,
                 "type_carte": type_carte,
                 "quantite": quantites[type_carte],
