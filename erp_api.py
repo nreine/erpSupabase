@@ -1099,7 +1099,10 @@ elif menu == "🚚 Expédition des lots":
     # ✅ Enregistrement de l'expédition
     if st.button("✅ Enregistrer l'expédition") and lot_id and agent_id:
         try:
+            last_id_data = supabase.table("expedition").select("id").order("id", desc=True).limit(1).execute().data
+            next_id = (last_id_data[0]["id"] + 1) if last_id_data else 1
             supabase.table("expedition").insert({
+                "id": next_id,
                 "lot_id": lot_id,
                 "pays": pays,
                 "statut": statut,
