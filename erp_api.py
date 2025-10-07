@@ -10,11 +10,6 @@ import plotly.graph_objects as go
 import plotly.express as px
 from sklearn.linear_model import LinearRegression
 
-st.set_page_config(
-    page_title="DSTM",
-    page_icon="Designer.png",  # ton icône
-)
-
 # Connexion à Supabase
 url = st.secrets["supabase_url"]
 key = st.secrets["supabase_key"]
