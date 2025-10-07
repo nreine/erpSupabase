@@ -6,25 +6,6 @@ st.set_page_config(
     layout="wide"
 )
 
-import streamlit as st
-
-# Configuration de la page
-st.set_page_config(
-    page_title="DSTM",
-    page_icon="assets/favicon.png",
-    layout="wide"
-)
-
-
-import streamlit as st
-
-# Configuration de la page
-st.set_page_config(
-    page_title="DSTM",
-    page_icon="assets/favicon.png",
-    layout="wide"
-)
-
 # Injection du CSS
 st.markdown("""
     <style>
