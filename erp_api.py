@@ -16,27 +16,6 @@ st.set_page_config(
     layout="wide"
 )
 
-# Injection du CSS
-st.markdown("""
-    <style>
-    /* Personnalisation du header */
-    header[data-testid="stHeader"] {
-        background: url('Designer.png') no-repeat left center;
-        background-size: 150px;
-        height: 60px;
-    }
-
-    /* Personnalisation du menu latéral */
-    [data-testid="stSidebarNav"]::before {
-        content: "DSTM";
-        font-size: 20px;
-        font-weight: bold;
-        margin-left: 0px;
-    }
-    </style>
-""", unsafe_allow_html=True)
-
-
 # Connexion à Supabase
 url = st.secrets["supabase_url"]
 key = st.secrets["supabase_key"]
