@@ -1319,7 +1319,7 @@ elif menu == "📦 Visualisation des expéditions":
         st.dataframe(df_filtered, use_container_width=True)
 
         st.subheader("🛠️ Gestion des expéditions")
-        for index, row in df_expeditions.iterrows():
+        for index, row in df_filtered.iterrows():
             col1, col2, col3 = st.columns([4, 1, 1])
             with col1:
                 st.write(
