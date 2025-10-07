@@ -1,5 +1,27 @@
 import math
 import streamlit as st
+
+st.set_page_config(
+    page_title="DSTM",
+    page_icon="Designer.png",  # ton icône
+    layout="wide"
+)
+
+st.markdown("""
+    <style>
+    [data-testid="stSidebarNav"]::before {
+        content: "DSTM";
+        font-size: 20px;
+        font-weight: bold;
+        margin-left: 10px;
+    }
+    header[data-testid="stHeader"] {
+        background: url('assets/logo_horizontal.png') no-repeat left center;
+        background-size: 150px;
+        height: 60px;
+    }
+    </style>""", unsafe_allow_html=True)
+
 from supabase import create_client
 import pandas as pd
 from datetime import date
