@@ -1253,6 +1253,63 @@ elif menu == "📦 Visualisation des expéditions":
             exp["agent_livreur"] = livreurs_dict.get(exp["agent_id"], "Non attribué")
 
         df_expeditions = pd.DataFrame(expeditions)
+
+        # 📊 Filtres latéraux
+        st.sidebar.header("🔍 Filtres Inventaire des expéditions")
+
+# Pays destinataire
+        pays_selection = st.sidebar.multiselect(
+            "Pays destinataire",
+            df_expeditions["pays"].dropna().unique(),
+            default=df_expeditions["pays"].dropna().unique()
+        )
+
+# Statut d'expédition
+        statut_selection = st.sidebar.multiselect(
+            "Statut",
+            df_expeditions["statut"].dropna().unique(),
+            default=df_expeditions["statut"].dropna().unique()
+        )
+
+# Agence de livraison
+        agence_selection = st.sidebar.multiselect(
+            "Agence de livraison",
+            df_expeditions["agence"].dropna().unique(),
+            default=df_expeditions["agence"].dropna().unique()
+        )
+
+# Nom du colis
+        colis_selection = st.sidebar.multiselect(
+            "Nom du colis",
+            df_expeditions["nom_lot"].dropna().unique(),
+            default=df_expeditions["nom_lot"].dropna().unique()
+        )
+
+# Agent livreur
+        agent_selection = st.sidebar.multiselect(
+            "Agent livreur",
+            df_expeditions["agent_livreur"].dropna().unique(),
+            default=df_expeditions["agent_livreur"].dropna().unique()
+        )
+        
+# Numéro de bordereau
+        bordereau_selection = st.sidebar.multiselect(
+           "Numéro de bordereau",
+           df_expeditions["bordereau"].dropna().unique(),
+           default=df_expeditions["bordereau"].dropna().unique()
+        )
+
+
+# 📋 Application des filtres
+        df_filtered = df_expeditions[
+        (df_expeditions["pays"].isin(pays_selection)) &
+        (df_expeditions["statut"].isin(statut_selection)) &
+        (df_expeditions["agence"].isin(agence_selection)) &
+        (df_expeditions["nom_lot"].isin(colis_selection)) &
+        (df_expeditions["agent_livreur"].isin(agent_selection)) &
+        (df_expeditions["bordereau"].isin(bordereau_selection))
+        ]
+        
     except Exception as e:
         st.error(f"Erreur lors de la récupération des données d'expédition : {e}")
         df_expeditions = pd.DataFrame()
