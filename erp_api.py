@@ -1254,7 +1254,7 @@ elif menu == "📦 Visualisation des expéditions":
 
         df_expeditions = pd.DataFrame(expeditions)
 
-        # 📊 Filtres latéraux
+    # 📊 Filtres latéraux
         st.sidebar.header("🔍 Filtres Inventaire des expéditions")
 
 # Pays destinataire
@@ -1309,7 +1309,6 @@ elif menu == "📦 Visualisation des expéditions":
         (df_expeditions["agent_livreur"].isin(agent_selection)) &
         (df_expeditions["bordereau"].isin(bordereau_selection))
         ]
-        
     except Exception as e:
         st.error(f"Erreur lors de la récupération des données d'expédition : {e}")
         df_expeditions = pd.DataFrame()
