@@ -13,8 +13,7 @@ from sklearn.linear_model import LinearRegression
 
 st.set_page_config(
     page_title="DSTM",
-    page_icon="Designer.png",  # ton icône
-    layout="wide"
+    page_icon="Designer.png"  # ton icône
 )
 
 st.markdown("""
