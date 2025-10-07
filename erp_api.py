@@ -10,34 +10,6 @@ import plotly.graph_objects as go
 import plotly.express as px
 from sklearn.linear_model import LinearRegression
 
-
-st.set_page_config(
-    page_title="DSTM",
-    page_icon="Designer.png"  # ton icône
-)
-
-st.markdown("""
-    <style>
-    /* Conserve la hauteur par défaut du header */
-    header[data-testid="stHeader"] {
-        background: url('Designer.png') no-repeat left center;
-        background-size: 120px auto; /* Ajuste la taille du logo */
-        padding-left: 150px; /* Laisse de l'espace pour le logo */
-        height: auto; /* Pas de hauteur forcée */
-    }
-
-    /* Sidebar : juste le texte, sans changer la taille */
-    [data-testid="stSidebarNav"]::before {
-        content: "DSTM";
-        font-size: 18px;
-        font-weight: bold;
-        margin-left: 10px;
-        display: block;
-        padding: 10px 0;
-    }
-    </style>
-""", unsafe_allow_html=True)
-
 # Connexion à Supabase
 url = st.secrets["supabase_url"]
 key = st.secrets["supabase_key"]
