@@ -10,6 +10,15 @@ import plotly.graph_objects as go
 import plotly.express as px
 from sklearn.linear_model import LinearRegression
 
+
+import streamlit as st
+
+st.set_page_config(
+    page_title="DSTM",
+    page_icon="assets/favicon.png",  # ton icône
+    layout="wide"
+)
+
 # Connexion à Supabase
 url = st.secrets["supabase_url"]
 key = st.secrets["supabase_key"]
