@@ -15,11 +15,6 @@ st.markdown("""
         font-weight: bold;
         margin-left: 10px;
     }
-    header[data-testid="stHeader"] {
-        background: url('Designer.png') no-repeat left center;
-        background-size: 150px;
-        height: 60px;
-    }
     </style>""", unsafe_allow_html=True)
 
 from supabase import create_client
