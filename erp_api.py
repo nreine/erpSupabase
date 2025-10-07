@@ -15,7 +15,7 @@ import streamlit as st
 
 st.set_page_config(
     page_title="DSTM",
-    page_icon="assets/favicon.png",  # ton icône
+    page_icon="Designer.png",  # ton icône
     layout="wide"
 )
 
