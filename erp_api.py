@@ -11,12 +11,9 @@ import plotly.express as px
 from sklearn.linear_model import LinearRegression
 
 
-import streamlit as st
-
 st.set_page_config(
     page_title="DSTM",
-    page_icon="Designer.png",  # ton icône
-    layout="wide"
+    page_icon="Designer.png"  # ton icône
 )
 
 # Connexion à Supabase
