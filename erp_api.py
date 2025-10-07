@@ -1316,7 +1316,7 @@ elif menu == "📦 Visualisation des expéditions":
     if df_expeditions.empty:
         st.warning("Aucune expédition enregistrée.")
     else:
-        st.dataframe(df_expeditions, use_container_width=True)
+        st.dataframe(df_filtered, use_container_width=True)
 
         st.subheader("🛠️ Gestion des expéditions")
         for index, row in df_expeditions.iterrows():
