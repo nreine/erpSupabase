@@ -16,7 +16,7 @@ st.markdown("""
         margin-left: 10px;
     }
     header[data-testid="stHeader"] {
-        background: url('assets/logo_horizontal.png') no-repeat left center;
+        background: url('Designer.png') no-repeat left center;
         background-size: 150px;
         height: 60px;
     }
