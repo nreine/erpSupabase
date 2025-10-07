@@ -1,5 +1,15 @@
 import math
 import streamlit as st
+from supabase import create_client
+import pandas as pd
+from datetime import date
+import hashlib
+
+import numpy as np
+import plotly.graph_objects as go
+import plotly.express as px
+from sklearn.linear_model import LinearRegression
+
 st.set_page_config(
     page_title="DSTM",
     page_icon="Designer.png",  # ton icône
@@ -26,16 +36,6 @@ st.markdown("""
     </style>
 """, unsafe_allow_html=True)
 
-
-from supabase import create_client
-import pandas as pd
-from datetime import date
-import hashlib
-
-import numpy as np
-import plotly.graph_objects as go
-import plotly.express as px
-from sklearn.linear_model import LinearRegression
 
 # Connexion à Supabase
 url = st.secrets["supabase_url"]
