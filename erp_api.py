@@ -31,7 +31,7 @@ st.markdown("""
         content: "DSTM";
         font-size: 20px;
         font-weight: bold;
-        margin-left: 10px;
+        margin-left: 0px;
     }
     </style>
 """, unsafe_allow_html=True)
