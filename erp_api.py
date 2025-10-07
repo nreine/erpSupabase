@@ -1043,22 +1043,26 @@ elif menu == "⚙️ Gestion des agences":
 elif menu == "🚚 Expédition des lots":
     st.markdown("## 🚚 Préparation des expéditions")
 
-    # 🔍 Sélection du lot
+    # 📅 Sélection de la date d'enregistrement
+    selected_date = st.date_input("📅 Sélectionnez une date d'enregistrement :", value=date.today())
+
+# 🌍 Choix du pays destinataire
+    pays = st.selectbox("🌍 Pays destinataire :", [
+        "Burkina Faso", "Mali", "Niger", "Côte d'Ivoire", "Sénégal",
+        "Bénin", "Togo", "Guinée Conakry", "Guinée Bissau"
+    ])
+
+# 📦 Récupération des lots enregistrés à cette date et pour le pays sélectionné
     try:
-        lots_response = supabase.table("lots").select("id, nom_lot").execute()
+        lots_response = supabase.table("lots").select("id, nom_lot, date_enregistrement, filiale")\
+           .eq("date_enregistrement", str(selected_date)).eq("filiale", pays).execute()
         lots = [(lot["id"], lot["nom_lot"]) for lot in lots_response.data]
     except Exception as e:
         st.error(f"Erreur lors de la récupération des lots : {e}")
         lots = []
 
-    lot_selectionne = st.selectbox("Sélectionnez un lot à expédier :", lots, format_func=lambda x: x[1])
+    lot_selectionne = st.selectbox("📦 Sélectionnez un lot à expédier :", lots, format_func=lambda x: x[1])
     lot_id = lot_selectionne[0] if lot_selectionne else None
-
-    # 📍 Choix du pays destinataire
-    pays = st.selectbox("Pays destinataire :", [
-        "Burkina Faso", "Mali", "Niger", "Côte d'Ivoire", "Sénégal",
-        "Bénin", "Togo", "Guinée Conakry", "Guinée Bissau"
-    ])
 
     # 🚦 Statut d'expédition
     statut = st.radio("Statut d'expédition :", ["En attente", "En cours d'expédition", "Expédié"])
