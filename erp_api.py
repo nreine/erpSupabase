@@ -860,7 +860,7 @@ if menu == "📦 Conditionnement des cartes":
             paquets = calcul_paquets_conditionnement(total, selected_filiale)
 
             for i, (type_emballage, cartes_emballees) in enumerate(paquets, 1):
-                st.success(f"📦 Conditionnement des cartes : {i} {type_emballage}")
+                st.success(f"📦 Conditionnement des cartes : {type_emballage} {i}")
                 remarque = st.text_input(
                         f"📝 Remarque sur {type_emballage}",
                         value="RAS",
