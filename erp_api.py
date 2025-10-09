@@ -839,7 +839,7 @@ if menu == "📦 Conditionnement des cartes":
             st.write(f"Quantité VIP : {total_vip} (Gold: {qte_gold}, Infinite: {qte_infinite})")
 
             st.info(f"📦 Packs VIP à conditionner : {packs_vip}")
-            st.write("📤 Emballage : Enveloppes grand format")
+            st.write("📤 Emballage Packs : Enveloppe(s) grand format")
 
             # Calcul des paquets classiques
             def calcul_paquets_conditionnement(quantite_totale, filiale):
@@ -860,8 +860,9 @@ if menu == "📦 Conditionnement des cartes":
             paquets = calcul_paquets_conditionnement(total, selected_filiale)
 
             for i, (type_emballage, cartes_emballees) in enumerate(paquets, 1):
+                st.success(f"📦 Conditionnement des cartes : {i} {type_emballage}")
                 remarque = st.text_input(
-                        f"📝 Remarque pour le paquet {i} ({type_emballage})",
+                        f"📝 Remarque sur {type_emballage}",
                         value="RAS",
                         key=f"remarque_{i}_{type_emballage}"
                 )
