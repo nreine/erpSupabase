@@ -585,7 +585,7 @@ elif menu == "📊 Graphiques et Analyses":
         st.plotly_chart(fig, use_container_width=True)
 
         # Graphique Mesh3D production mensuelle
-        lots_df_filtered["Mois"] = lots_df_filtered["date_enregistrement"].dt.month_name(locale="fr_FR")
+        lots_df_filtered["Mois"] = lots_df_filtered["date_enregistrement"].dt.month_name()
         prod_mensuelle = lots_df_filtered.groupby("Mois")["quantite"].sum().reset_index()
         mois_ordonne = ["Janvier", "Février", "Mars", "Avril", "Mai", "Juin",
                         "Juillet", "Août", "Septembre", "Octobre", "Novembre", "Décembre"]
@@ -760,7 +760,7 @@ elif menu == "📊 Graphiques et Analyses":
         st.plotly_chart(fig, use_container_width=True)
 
         # Graphique courbe 3D par jour de la semaine
-        controle_df_filtered["Jour_Semaine"] = controle_df_filtered["date_controle"].dt.day_name(locale="fr_FR")
+        controle_df_filtered["Jour_Semaine"] = controle_df_filtered["date_controle"].dt.day_name()
         tests_par_jour = controle_df_filtered.groupby("Jour_Semaine")["quantite_a_tester"].sum().reset_index()
         jours_ordonne = ["Lundi", "Mardi", "Mercredi", "Jeudi", "Vendredi", "Samedi", "Dimanche"]
         tests_par_jour["Jour_Semaine"] = pd.Categorical(tests_par_jour["Jour_Semaine"], categories=jours_ordonne, ordered=True)
