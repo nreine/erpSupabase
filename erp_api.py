@@ -470,6 +470,7 @@ elif menu == "📊 Graphiques et Analyses":
         controle_df["Jour_Semaine"] = controle_df["date_controle"].dt.day_name()     
         controle_df["Mois"] = controle_df["date_controle"].dt.month_name()
         lots_df["Mois"] = lots_df["date_enregistrement"].dt.month_name()
+        lots_df["Mois"] = lots_df["Mois"].map({'January': 'Janvier', 'February': 'Février', 'March': 'Mars', 'April': 'Avril', 'May': 'Mai', 'June': 'Juin', 'July': 'Juillet', 'August': 'Août', 'September': 'Septembre', 'October': 'Octobre', 'November': 'Novembre', 'December': 'Décembre'})
         lots_df["Trimestre"] = lots_df["date_enregistrement"].dt.quarter.astype(str)
         controle_df["Trimestre"] = controle_df["date_controle"].dt.quarter.astype(str)
 
