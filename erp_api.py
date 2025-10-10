@@ -469,7 +469,9 @@ elif menu == "📊 Graphiques et Analyses":
         controle_df["date_controle"] = pd.to_datetime(controle_df["date_controle"], errors="coerce")
         controle_df["Jour_Semaine"] = controle_df["date_controle"].dt.day_name()     
         controle_df["Mois"] = controle_df["date_controle"].dt.month_name()
-        lots_df["Mois"] = lots_df["date_enregistrement"].dt.month_name()      
+        controle_df["Mois"] = controle_df["Mois"].map({'January': 'Janvier', 'February': 'Février', 'March': 'Mars', 'April': 'Avril', 'May': 'Mai', 'June': 'Juin', 'July': 'Juillet', 'August': 'Août', 'September': 'Septembre', 'October': 'Octobre', 'November': 'Novembre', 'December': 'Décembre'})
+        lots_df["Mois"] = lots_df["date_enregistrement"].dt.month_name()  
+        lots_df["Mois"] = lots_df["Mois"].map({'January': 'Janvier', 'February': 'Février', 'March': 'Mars', 'April': 'Avril', 'May': 'Mai', 'June': 'Juin', 'July': 'Juillet', 'August': 'Août', 'September': 'Septembre', 'October': 'Octobre', 'November': 'Novembre', 'December': 'Décembre'})
         lots_df["Trimestre"] = lots_df["date_enregistrement"].dt.quarter.astype(str)
         controle_df["Trimestre"] = controle_df["date_controle"].dt.quarter.astype(str)
 
@@ -495,16 +497,13 @@ elif menu == "📊 Graphiques et Analyses":
 
         types_cartes = controle_df["type_carte"].dropna().unique().tolist()
         type_selection = st.sidebar.multiselect("Type de carte", types_cartes, default=types_cartes)
-
         
         jours = controle_df["Jour_Semaine"].dropna().unique().tolist()
         jour_selection = st.sidebar.multiselect("Jour de la semaine", jours, default=jours)
-
         
         # Filtre latéral unique
         mois_selection = st.sidebar.multiselect("Mois", mois_combines, default=mois_combines)
 
-        
         # Filtre latéral unique
         trimestre_selection = st.sidebar.multiselect("Trimestre", trimestres_combines, default=trimestres_combines)
 
