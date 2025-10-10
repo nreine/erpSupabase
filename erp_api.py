@@ -467,9 +467,9 @@ elif menu == "📊 Graphiques et Analyses":
         # Conversion des dates
         lots_df["date_enregistrement"] = pd.to_datetime(lots_df["date_enregistrement"], errors="coerce")
         controle_df["date_controle"] = pd.to_datetime(controle_df["date_controle"], errors="coerce")
-        controle_df["Jour_Semaine"] = controle_df["date_controle"].dt.day_name(locale="fr_FR")     
-        controle_df["Mois"] = controle_df["date_controle"].dt.month_name(locale="fr_FR")
-        lots_df["Mois"] = lots_df["date_enregistrement"].dt.month_name(locale="fr_FR")      
+        controle_df["Jour_Semaine"] = controle_df["date_controle"].dt.day_name()     
+        controle_df["Mois"] = controle_df["date_controle"].dt.month_name()
+        lots_df["Mois"] = lots_df["date_enregistrement"].dt.month_name()      
         lots_df["Trimestre"] = lots_df["date_enregistrement"].dt.quarter.astype(str)
         controle_df["Trimestre"] = controle_df["date_controle"].dt.quarter.astype(str)
 
