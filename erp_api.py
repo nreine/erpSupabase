@@ -809,7 +809,6 @@ elif menu == "📊 Graphiques et Analyses":
         fig.update_layout(xaxis_tickangle=-45)
         st.plotly_chart(fig, use_container_width=True)
 
-
 # Bloc Conditionnement des cartes
 if menu == "📦 Conditionnement des cartes":
     st.markdown("## 📦 Conditionnement des cartes")
