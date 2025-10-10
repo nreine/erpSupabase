@@ -483,7 +483,7 @@ elif menu == "📊 Graphiques et Analyses":
         trimestres_controle = controle_df["Trimestre"].dropna().unique().tolist()
         trimestres_combines = sorted(set(trimestres_lots + trimestres_controle), key=lambda x: int(x))
 
-        st.sidebar.header("🔍 Filtres Contrôle Qualité")
+        st.sidebar.header("🔍 Filtres Graphiques")
 
         controle_df["date_controle"] = pd.to_datetime(controle_df["date_controle"], errors="coerce")
         min_date = controle_df["date_controle"].min().date()
