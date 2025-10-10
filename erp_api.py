@@ -467,13 +467,67 @@ elif menu == "📊 Graphiques et Analyses":
         # Conversion des dates
         lots_df["date_enregistrement"] = pd.to_datetime(lots_df["date_enregistrement"], errors="coerce")
         controle_df["date_controle"] = pd.to_datetime(controle_df["date_controle"], errors="coerce")
+        controle_df["Jour_Semaine"] = controle_df["date_controle"].dt.day_name(locale="fr_FR")     
+        controle_df["Mois"] = controle_df["date_controle"].dt.month_name(locale="fr_FR")
+        lots_df["Mois"] = lots_df["date_enregistrement"].dt.month_name(locale="fr_FR")      
+        lots_df["Trimestre"] = lots_df["date_enregistrement"].dt.quarter.astype(str)
+        controle_df["Trimestre"] = controle_df["date_controle"].dt.quarter.astype(str)
+
+        # Fusionner les mois des deux sources
+        mois_lots = lots_df["Mois"].dropna().unique().tolist()
+        mois_controle = controle_df["Mois"].dropna().unique().tolist()
+        mois_combines = sorted(set(mois_lots + mois_controle), key=lambda x: mois_lots.index(x) if x in mois_lots else mois_controle.index(x))
+
+        # Fusion des trimestres disponibles
+        trimestres_lots = lots_df["Trimestre"].dropna().unique().tolist()
+        trimestres_controle = controle_df["Trimestre"].dropna().unique().tolist()
+        trimestres_combines = sorted(set(trimestres_lots + trimestres_controle), key=lambda x: int(x))
+
+        st.sidebar.header("🔍 Filtres Contrôle Qualité")
+
+        controle_df["date_controle"] = pd.to_datetime(controle_df["date_controle"], errors="coerce")
+        min_date = controle_df["date_controle"].min().date()
+        max_date = controle_df["date_controle"].max().date()
+        date_range = st.sidebar.date_input("Période de contrôle", [min_date, max_date])
+
+        filiales = controle_df["filiale"].dropna().unique().tolist()
+        filiale_selection = st.sidebar.multiselect("Filiale", filiales, default=filiales)
+
+        types_cartes = controle_df["type_carte"].dropna().unique().tolist()
+        type_selection = st.sidebar.multiselect("Type de carte", types_cartes, default=types_cartes)
+
+        
+        jours = controle_df["Jour_Semaine"].dropna().unique().tolist()
+        jour_selection = st.sidebar.multiselect("Jour de la semaine", jours, default=jours)
+
+        
+        # Filtre latéral unique
+        mois_selection = st.sidebar.multiselect("Mois", mois_combines, default=mois_combines)
+
+        
+        # Filtre latéral unique
+        trimestre_selection = st.sidebar.multiselect("Trimestre", trimestres_combines, default=trimestres_combines)
+
+        controle_df_filtered = controle_df[
+            (controle_df["date_controle"].dt.date >= date_range[0]) &
+            (controle_df["date_controle"].dt.date <= date_range[1]) &
+            (controle_df["filiale"].isin(filiale_selection)) &
+            (controle_df["type_carte"].isin(type_selection)) &
+            (controle_df["Jour_Semaine"].isin(jour_selection)) 
+        ]
+        
+        # Appliquer le filtre aux deux DataFrames
+        lots_df_filtered = lots_df[lots_df["Mois"].isin(mois_selection)]
+        
+        # Application du filtre aux deux DataFrames
+        lots_df_filtered = lots_df[lots_df["Trimestre"].isin(trimestre_selection)]
 
         # KPIs sur les lots
         st.header("Lots Enregistrés")
-        total_lots = len(lots_df)
-        total_cartes = lots_df["quantite"].sum()
-        moyenne_cartes = lots_df["quantite"].mean()
-        lots_avec_pin = lots_df[lots_df["impression_pin"] == "Oui"].shape[0]
+        total_lots = len(lots_df_filtered)
+        total_cartes = lots_df_filtered["quantite"].sum()
+        moyenne_cartes = lots_df_filtered["quantite"].mean()
+        lots_avec_pin = lots_df_filtered[lots_df_filtered["impression_pin"] == "Oui"].shape[0]
         col1, col2, col3, col4 = st.columns(4)
         col1.metric("Nombre total de lots", total_lots)
         col2.metric("Total cartes produites", total_cartes)
@@ -481,8 +535,8 @@ elif menu == "📊 Graphiques et Analyses":
         col4.metric("Lots avec impression PIN", lots_avec_pin)
 
         # Graphique cônes 3D par type de lot
-        types_lot = lots_df["type_lot"].unique().tolist()
-        quantites = lots_df.groupby("type_lot")["quantite"].sum().tolist()
+        types_lot = lots_df_filtered["type_lot"].unique().tolist()
+        quantites = lots_df_filtered.groupby("type_lot")["quantite"].sum().tolist()
         colors = ['lightblue', 'lightgreen', 'lightpink']
         fig = go.Figure()
         n_points = 50
@@ -527,12 +581,12 @@ elif menu == "📊 Graphiques et Analyses":
         import numpy as np
     
 # Conversion des dates et extraction du mois
-        lots_df["date_enregistrement"] = pd.to_datetime(lots_df["date_enregistrement"], errors="coerce")
-        lots_df["Mois"] = lots_df["date_enregistrement"].dt.month_name()
-        lots_df["Mois"] = lots_df["Mois"].map({'January': 'Janvier', 'February': 'Février', 'March': 'Mars', 'April': 'Avril', 'May': 'Mai', 'June': 'Juin', 'July': 'Juillet', 'August': 'Août', 'September': 'Septembre', 'October': 'Octobre', 'November': 'Novembre', 'December': 'Décembre'})
+        lots_df_filtered["date_enregistrement"] = pd.to_datetime(lots_df_filtered["date_enregistrement"], errors="coerce")
+        lots_df_filtered["Mois"] = lots_df_filtered["date_enregistrement"].dt.month_name()
+        lots_df_filtered["Mois"] = lots_df_filtered["Mois"].map({'January': 'Janvier', 'February': 'Février', 'March': 'Mars', 'April': 'Avril', 'May': 'Mai', 'June': 'Juin', 'July': 'Juillet', 'August': 'Août', 'September': 'Septembre', 'October': 'Octobre', 'November': 'Novembre', 'December': 'Décembre'})
 
 # Agrégation mensuelle
-        production_mensuelle = lots_df.groupby("Mois")["quantite"].sum().reset_index()
+        production_mensuelle = lots_df_filtered.groupby("Mois")["quantite"].sum().reset_index()
 
 # Ordre des mois
         mois_ordonne = ["Janvier", "Février", "Mars", "Avril", "Mai", "Juin",
@@ -579,9 +633,9 @@ elif menu == "📊 Graphiques et Analyses":
         st.plotly_chart(fig, use_container_width=True)
 
         # Graphique cylindres 3D par trimestre
-        lots_df["Année"] = lots_df["date_enregistrement"].dt.year
-        lots_df["Trimestre"] = lots_df["date_enregistrement"].dt.quarter
-        agg = lots_df.groupby(["Année", "Trimestre"])["quantite"].sum().reset_index()
+        lots_df_filtered["Année"] = lots_df_filtered["date_enregistrement"].dt.year
+        lots_df_filtered["Trimestre"] = lots_df_filtered["date_enregistrement"].dt.quarter
+        agg = lots_df_filtered.groupby(["Année", "Trimestre"])["quantite"].sum().reset_index()
         agg["Label"] = agg.apply(lambda row: f"{row['Année']} - T{row['Trimestre']}", axis=1)
         fig = go.Figure()
         r = 0.4
@@ -620,12 +674,12 @@ elif menu == "📊 Graphiques et Analyses":
 
         # KPIs sur le contrôle qualité
         st.header("Contrôle qualité")
-        total_tests = controle_df["quantite_a_tester"].sum()
-        nb_reussites = controle_df[controle_df["resultat"] == "Réussite"].shape[0]
-        nb_echecs = controle_df[controle_df["resultat"] == "Échec"].shape[0]
+        total_tests = controle_df_filtered["quantite_a_tester"].sum()
+        nb_reussites = controle_df_filtered[controle_df_filtered["resultat"] == "Réussite"].shape[0]
+        nb_echecs = controle_df_filtered[controle_df_filtered["resultat"] == "Échec"].shape[0]
         taux_reussite = (nb_reussites / (nb_reussites + nb_echecs)) * 100 if (nb_reussites + nb_echecs) > 0 else 0
         taux_echec = 100 - taux_reussite
-        anomalies = controle_df[controle_df["remarque"].notna() & (controle_df["remarque"] != "")].shape[0]
+        anomalies = controle_df_filtered[controle_df_filtered["remarque"].notna() & (controle_df_filtered["remarque"] != "")].shape[0]
         col1, col2, col3, col4 = st.columns(4)
         col1.metric("Total cartes testées", total_tests)
         col2.metric("Taux de réussite", f"{taux_reussite:.2f}%")
@@ -633,18 +687,18 @@ elif menu == "📊 Graphiques et Analyses":
         col4.metric("Nombre d'anomalies signalées", anomalies)
 
         # Graphique barres par filiale
-        df_grouped = controle_df.groupby("filiale")["quantite_a_tester"].sum().reset_index()
+        df_grouped = controle_df_filtered.groupby("filiale")["quantite_a_tester"].sum().reset_index()
         fig = px.bar(df_grouped, x="filiale", y="quantite_a_tester", text="quantite_a_tester",
                      title="📊 Total des tests par filiale", labels={"filiale": "Filiale", "quantite_a_tester": "Tests"}, height=500)
         fig.update_traces(textposition="outside")
         st.plotly_chart(fig, use_container_width=True)
 
         # Conversion des dates
-        controle_df["date_controle"] = pd.to_datetime(controle_df["date_controle"], errors="coerce")
-        controle_df["Mois"] = controle_df["date_controle"].dt.to_period("M").astype(str)
+        controle_df_filtered["date_controle"] = pd.to_datetime(controle_df_filtered["date_controle"], errors="coerce")
+        controle_df_filtered["Mois"] = controle_df_filtered["date_controle"].dt.to_period("M").astype(str)
 
         # Agrégation des données
-        grouped = controle_df.groupby(["filiale", "type_carte"])["quantite_a_tester"].sum().reset_index()
+        grouped = controle_df_filtered.groupby(["filiale", "type_carte"])["quantite_a_tester"].sum().reset_index()
 
         # Graphique interactif
         fig = px.bar(
@@ -660,14 +714,14 @@ elif menu == "📊 Graphiques et Analyses":
         st.plotly_chart(fig, use_container_width=True)
 
         # Graphique barres par type de carte
-        fig = px.bar(controle_df["type_carte"].value_counts().reset_index(), x="type_carte", y="count",
+        fig = px.bar(controle_df_filtered["type_carte"].value_counts().reset_index(), x="type_carte", y="count",
                      labels={"count": "Type de carte", "type_carte": "Nombre de tests"},
                      title="📊 Tests par type de carte")
         st.plotly_chart(fig, use_container_width=True)
 
         # Graphique pyramides 3D par mois
-        controle_df["Mois"] = controle_df["date_controle"].dt.to_period("M").astype(str)
-        tests_mensuels = controle_df.groupby("Mois")["quantite_a_tester"].sum().reset_index()
+        controle_df_filtered["Mois"] = controle_df_filtered["date_controle"].dt.to_period("M").astype(str)
+        tests_mensuels = controle_df_filtered.groupby("Mois")["quantite_a_tester"].sum().reset_index()
         fig = go.Figure()
         base_size = 0.5
         for i, row in tests_mensuels.iterrows():
@@ -701,7 +755,7 @@ elif menu == "📊 Graphiques et Analyses":
 
    
         # Graphique prévision linéaire
-        monthly_tests = controle_df.groupby("Mois")["quantite_a_tester"].sum().reset_index()
+        monthly_tests = controle_df_filtered.groupby("Mois")["quantite_a_tester"].sum().reset_index()
         monthly_tests["Mois_Num"] = pd.to_datetime(monthly_tests["Mois"]).map(lambda x: x.toordinal())
         X = monthly_tests[["Mois_Num"]]
         y = monthly_tests["quantite_a_tester"]
@@ -725,10 +779,10 @@ elif menu == "📊 Graphiques et Analyses":
         st.plotly_chart(fig, use_container_width=True)
 
         # Graphique courbe 3D par jour de la semaine
-        controle_df["date_controle"] = pd.to_datetime(controle_df["date_controle"], errors="coerce")
-        controle_df["Jour_Semaine"] = controle_df["date_controle"].dt.day_name()
-        controle_df["Jour_Semaine"] = controle_df["Jour_Semaine"].map({'Monday': 'Lundi', 'Tuesday': 'Mardi', 'Wednesday': 'Mercredi', 'Thursday': 'Jeudi', 'Friday': 'Vendredi', 'Saturday': 'Samedi', 'Sunday': 'Dimanche'})
-        tests_par_jour = controle_df.groupby("Jour_Semaine")["quantite_a_tester"].sum().reset_index()
+        controle_df_filtered["date_controle"] = pd.to_datetime(controle_df_filtered["date_controle"], errors="coerce")
+        controle_df_filtered["Jour_Semaine"] = controle_df_filtered["date_controle"].dt.day_name()
+        controle_df_filtered["Jour_Semaine"] = controle_df_filtered["Jour_Semaine"].map({'Monday': 'Lundi', 'Tuesday': 'Mardi', 'Wednesday': 'Mercredi', 'Thursday': 'Jeudi', 'Friday': 'Vendredi', 'Saturday': 'Samedi', 'Sunday': 'Dimanche'})
+        tests_par_jour = controle_df_filtered.groupby("Jour_Semaine")["quantite_a_tester"].sum().reset_index()
     
         import plotly.graph_objects as go
 
@@ -768,15 +822,15 @@ elif menu == "📊 Graphiques et Analyses":
         # KPIs temporels
         st.header("📅 Évolution temporelle")
         
-        lots_df["mois"] = lots_df["date_enregistrement"].dt.to_period("M").astype(str)
-        evolution_lots = lots_df.groupby("mois")["quantite"].sum().reset_index()
+        lots_df_filtered["mois"] = lots_df_filtered["date_enregistrement"].dt.to_period("M").astype(str)
+        evolution_lots = lots_df_filtered.groupby("mois")["quantite"].sum().reset_index()
         fig = px.line(evolution_lots, x="mois", y="quantite", markers=True,
                      title="📈 Évolution mensuelle des lots enregistrés",
                      labels={"mois": "Mois", "quantite": "Quantité totale"})
         st.plotly_chart(fig, use_container_width=True)
        
-        controle_df["semaine"] = controle_df["date_controle"].dt.to_period("W").astype(str)
-        evolution_tests = controle_df.groupby("semaine")["quantite_a_tester"].sum().reset_index()
+        controle_df_filtered["semaine"] = controle_df_filtered["date_controle"].dt.to_period("W").astype(str)
+        evolution_tests = controle_df_filtered.groupby("semaine")["quantite_a_tester"].sum().reset_index()
         fig = px.bar(evolution_tests, x="semaine", y="quantite_a_tester",
                      title="📊 Évolution hebdomadaire des tests qualité",
                      labels={"semaine": "Semaine", "quantite_a_tester": "Nombre total de tests"},
