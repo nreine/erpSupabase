@@ -446,8 +446,6 @@ elif menu == "🗂 Inventaire des tests":
                     st.warning("🗑️ Test supprimé.")
                     st.rerun()
 
-
-
 # Bloc Graphiques et Analyses
 elif menu == "📊 Graphiques et Analyses":
     st.markdown("## 📊 Tableau de bord des indicateurs")
