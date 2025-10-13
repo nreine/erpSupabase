@@ -510,7 +510,8 @@ elif menu == "📊 Graphiques et Analyses":
             (controle_df["date_controle"].dt.date <= date_range[1]) &
             (controle_df["filiale"].isin(filiale_selection)) &
             (controle_df["type_carte"].isin(type_selection)) &
-            (controle_df["Jour_Semaine"].isin(jour_selection)) 
+            (controle_df["Jour_Semaine"].isin(jour_selection)) &
+            (controle_df["mois_selection"].isin(mois_selection)) 
         ]
         
         # Appliquer le filtre aux deux DataFrames
