@@ -463,13 +463,19 @@ elif menu == "📊 Graphiques et Analyses":
         # Ajout des filiales aux contrôles
         lot_filiales = {lot["id"]: lot["filiale"] for lot in lots_data}
         controle_df["filiale"] = controle_df["lot_id"].map(lot_filiales)
+        
+        mois_en_fr = {
+            'January': 'Janvier', 'February': 'Février', 'March': 'Mars', 'April': 'Avril',
+            'May': 'Mai', 'June': 'Juin', 'July': 'Juillet', 'August': 'Août',
+            'September': 'Septembre', 'October': 'Octobre', 'November': 'Novembre', 'December': 'Décembre'
+        }
 
         # Conversion des dates
         lots_df["date_enregistrement"] = pd.to_datetime(lots_df["date_enregistrement"], errors="coerce")
         controle_df["date_controle"] = pd.to_datetime(controle_df["date_controle"], errors="coerce")
         controle_df["Jour_Semaine"] = controle_df["date_controle"].dt.day_name()     
-        controle_df["Mois"] = controle_df["date_controle"].dt.month_name()
-        lots_df["Mois"] = lots_df["date_enregistrement"].dt.month_name()
+        controle_df["Mois"] = controle_df["date_controle"].dt.month_name().map(mois_en_fr)
+        lots_df["Mois"] = lots_df["date_enregistrement"].dt.month_name().map(mois_en_fr)
         lots_df["Trimestre"] = lots_df["date_enregistrement"].dt.quarter.astype(str)
         controle_df["Trimestre"] = controle_df["date_controle"].dt.quarter.astype(str)
 
@@ -514,7 +520,7 @@ elif menu == "📊 Graphiques et Analyses":
             (controle_df["Mois"].isin(mois_selection)) &
             (controle_df["Trimestre"].isin(trimestre_selection))
         ]
-        
+
         lots_df_filtered = lots_df[
             lots_df["Mois"].isin(mois_selection) &
             lots_df["Trimestre"].isin(trimestre_selection)
