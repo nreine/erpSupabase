@@ -511,13 +511,14 @@ elif menu == "📊 Graphiques et Analyses":
             (controle_df["filiale"].isin(filiale_selection)) &
             (controle_df["type_carte"].isin(type_selection)) &
             (controle_df["Jour_Semaine"].isin(jour_selection))
+            (controle_df["Mois"].isin(mois_selection)) &
+            (controle_df["Trimestre"].isin(trimestre_selection))
         ]
         
-        # Appliquer le filtre aux deux DataFrames
-        lots_df_filtered = lots_df[lots_df["Mois"].isin(mois_selection)]
-        
-        # Application du filtre aux deux DataFrames
-        lots_df_filtered = lots_df[lots_df["Trimestre"].isin(trimestre_selection)]
+        lots_df_filtered = lots_df[
+            lots_df["Mois"].isin(mois_selection) &
+            lots_df["Trimestre"].isin(trimestre_selection)
+        ]
 
         # KPIs sur les lots
         st.header("Lots Enregistrés")
