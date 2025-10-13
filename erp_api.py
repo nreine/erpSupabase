@@ -473,8 +473,7 @@ elif menu == "📊 Graphiques et Analyses":
         lots_df["Mois"] = lots_df["date_enregistrement"].dt.month_name()      
         lots_df["Trimestre"] = lots_df["date_enregistrement"].dt.quarter.astype(str)
         controle_df["Trimestre"] = controle_df["date_controle"].dt.quarter.astype(str)
-        lots_df["Mois"] = lots_df["Mois"].map({'January': 'Janvier', 'February': 'Février', 'March': 'Mars', 'April': 'Avril', 'May': 'Mai', 'June': 'Juin', 'July': 'Juillet', 'August': 'Août', 'September': 'Septembre', 'October': 'Octobre', 'November': 'Novembre', 'December': 'Décembre'})
-
+        
 
         
         # Fusionner les mois des deux sources
@@ -587,6 +586,7 @@ elif menu == "📊 Graphiques et Analyses":
 
         # Graphique Mesh3D production mensuelle
         lots_df_filtered["Mois"] = lots_df_filtered["date_enregistrement"].dt.month_name()
+        lots_df_filtered["Mois"] = lots_df_filtered["Mois"].map({'January': 'Janvier', 'February': 'Février', 'March': 'Mars', 'April': 'Avril', 'May': 'Mai', 'June': 'Juin', 'July': 'Juillet', 'August': 'Août', 'September': 'Septembre', 'October': 'Octobre', 'November': 'Novembre', 'December': 'Décembre'})
         prod_mensuelle = lots_df_filtered.groupby("Mois")["quantite"].sum().reset_index()
         mois_ordonne = ["Janvier", "Février", "Mars", "Avril", "Mai", "Juin",
                         "Juillet", "Août", "Septembre", "Octobre", "Novembre", "Décembre"]
