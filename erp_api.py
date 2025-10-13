@@ -578,12 +578,12 @@ elif menu == "📊 Graphiques et Analyses":
         import numpy as np
     
 # Conversion des dates et extraction du mois
-        lots_df["date_enregistrement"] = pd.to_datetime(lots_df["date_enregistrement"], errors="coerce")
-        lots_df["Mois"] = lots_df["date_enregistrement"].dt.month_name()
-        lots_df["Mois"] = lots_df["Mois"].map({'January': 'Janvier', 'February': 'Février', 'March': 'Mars', 'April': 'Avril', 'May': 'Mai', 'June': 'Juin', 'July': 'Juillet', 'August': 'Août', 'September': 'Septembre', 'October': 'Octobre', 'November': 'Novembre', 'December': 'Décembre'})
+        lots_df_filtered["date_enregistrement"] = pd.to_datetime(lots_df_filtered["date_enregistrement"], errors="coerce")
+        lots_df_filtered["Mois"] = lots_df_filtered["date_enregistrement"].dt.month_name()
+        lots_df_filtered["Mois"] = lots_df_filtered["Mois"].map({'January': 'Janvier', 'February': 'Février', 'March': 'Mars', 'April': 'Avril', 'May': 'Mai', 'June': 'Juin', 'July': 'Juillet', 'August': 'Août', 'September': 'Septembre', 'October': 'Octobre', 'November': 'Novembre', 'December': 'Décembre'})
 
 # Agrégation mensuelle
-        production_mensuelle = lots_df.groupby("Mois")["quantite"].sum().reset_index()
+        production_mensuelle = lots_df_filtered.groupby("Mois")["quantite"].sum().reset_index()
 
 # Ordre des mois
         mois_ordonne = ["Janvier", "Février", "Mars", "Avril", "Mai", "Juin",
