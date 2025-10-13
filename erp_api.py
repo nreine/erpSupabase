@@ -469,11 +469,15 @@ elif menu == "📊 Graphiques et Analyses":
             'May': 'Mai', 'June': 'Juin', 'July': 'Juillet', 'August': 'Août',
             'September': 'Septembre', 'October': 'Octobre', 'November': 'Novembre', 'December': 'Décembre'
         }
+        semaine_en_fr = {
+            'Monday': 'Lundi', 'Tuesday': 'Mardi', 'Wednesday': 'Mercredi', 'Thursday': 'Jeudi',
+            'Friday': 'Vendredi', 'Saturday': 'Samedi', 'Sunday': 'Dimanche'
+        }
 
         # Conversion des dates
         lots_df["date_enregistrement"] = pd.to_datetime(lots_df["date_enregistrement"], errors="coerce")
         controle_df["date_controle"] = pd.to_datetime(controle_df["date_controle"], errors="coerce")
-        controle_df["Jour_Semaine"] = controle_df["date_controle"].dt.day_name()     
+        controle_df["Jour_Semaine"] = controle_df["date_controle"].dt.day_name().map(semaine_en_fr)     
         controle_df["Mois"] = controle_df["date_controle"].dt.month_name().map(mois_en_fr)
         lots_df["Mois"] = lots_df["date_enregistrement"].dt.month_name().map(mois_en_fr)
         lots_df["Trimestre"] = lots_df["date_enregistrement"].dt.quarter.astype(str)
