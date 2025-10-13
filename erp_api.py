@@ -834,7 +834,7 @@ elif menu == "📊 Graphiques et Analyses":
             'September': 'Septembre', 'October': 'Octobre', 'November': 'Novembre', 'December': 'Décembre'
         }
 
-        lots_df_filtered["mois"] = lots_df_filtered["date_enregistrement"].dt.month_name().map(mois_en_fr)
+        lots_df_filtered["mois"] = lots_df_filtered["date_enregistrement"].dt.to_period("M").dt.month_name().map(mois_en_fr)
 
         evolution_lots = lots_df_filtered.groupby("mois")["quantite"].sum().reset_index()
         fig = px.line(evolution_lots, x="mois", y="quantite", markers=True,
