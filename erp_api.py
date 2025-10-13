@@ -579,6 +579,7 @@ elif menu == "📊 Graphiques et Analyses":
     
 # Conversion des dates et extraction du mois
         lots_df_filtered["Mois"] = lots_df_filtered["date_enregistrement"].dt.month_name()
+        lots_df_filtered["Mois"] = lots_df_filtered["Mois"].map({'January': 'Janvier', 'February': 'Février', 'March': 'Mars', 'April': 'Avril', 'May': 'Mai', 'June': 'Juin', 'July': 'Juillet', 'August': 'Août', 'September': 'Septembre', 'October': 'Octobre', 'November': 'Novembre', 'December': 'Décembre'})
 # Agrégation mensuelle
         production_mensuelle = lots_df_filtered.groupby("Mois")["quantite"].sum().reset_index()
 # Ordre des mois
