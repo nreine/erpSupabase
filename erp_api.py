@@ -826,8 +826,16 @@ elif menu == "📊 Graphiques et Analyses":
 
         # KPIs temporels
         st.header("📅 Évolution temporelle")
+
         
-        lots_df_filtered["mois"] = lots_df_filtered["date_enregistrement"].dt.to_period("M").astype(str)
+        mois_en_fr = {
+            'January': 'Janvier', 'February': 'Février', 'March': 'Mars', 'April': 'Avril',
+            'May': 'Mai', 'June': 'Juin', 'July': 'Juillet', 'August': 'Août',
+            'September': 'Septembre', 'October': 'Octobre', 'November': 'Novembre', 'December': 'Décembre'
+        }
+
+        lots_df_filtered["mois"] = lots_df_filtered["date_enregistrement"].dt.month_name().map(mois_en_fr)
+
         evolution_lots = lots_df_filtered.groupby("mois")["quantite"].sum().reset_index()
         fig = px.line(evolution_lots, x="mois", y="quantite", markers=True,
                      title="📈 Évolution mensuelle des lots enregistrés",
