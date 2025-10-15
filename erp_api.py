@@ -27,7 +27,7 @@ def hash_password(password):
 
 # Fonction de connexion utilisateur
 def login_form():
-    st.markdown("<h2 style='text-align: center;'>🔐 Connexion à l'application ERP</h2>", unsafe_allow_html=True)
+    st.markdown("<h2 style='text-align: center;'> Connexion à l'application DSTM</h2>", unsafe_allow_html=True)
     st.markdown("<div style='text-align: center;'>Veuillez entrer vos identifiants pour accéder à l'application.</div>", unsafe_allow_html=True)
     st.divider()
     with st.form("login_form"):
@@ -448,7 +448,7 @@ elif menu == "🗂 Inventaire des tests":
 
 # Bloc Graphiques et Analyses
 elif menu == "📊 Graphiques et Analyses":
-    st.markdown("## 📊 Tableau de bord des indicateurs")
+    st.markdown("## 📊 Indicateurs de performances")
 
     # Récupération des données
     lots_data = supabase.table("lots").select("*").execute().data
