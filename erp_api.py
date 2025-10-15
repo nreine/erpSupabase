@@ -80,8 +80,8 @@ if "doit_changer_mdp" in st.session_state and st.session_state["doit_changer_mdp
 # Exemple d'enregistrement d'un lot
 def enregistrer_lot():
     st.markdown("## ➕ Enregistrement d'un nouveau lot")
-    st.markdown("<div style='text-align: center; color: grey;'>Renseigner le formulaire </div>", unsafe_allow_html=True)
     with st.form("form_enregistrement"):
+        st.markdown("<div style='text-align: center; color: grey;'>Renseigner le formulaire </div>", unsafe_allow_html=True)
         col1, col2 = st.columns(2)
         with col1:
             nom_lot = st.text_input("Nom du lot")
