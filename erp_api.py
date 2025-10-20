@@ -149,7 +149,6 @@ with st.sidebar:
 
 def accueil_dashboard():
     import pandas as pd
-    st.markdown("<hr>", unsafe_allow_html=True)
     st.markdown("<h2 style='text-align:center;'>Accueil</h2>", unsafe_allow_html=True)
 # 📦 Carte des lots enregistrés
     lots_data = supabase.table("lots").select("type_lot", "quantite").execute().data
