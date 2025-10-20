@@ -237,7 +237,7 @@ def accueil_dashboard():
     fig = px.bar(repartition, x="type_carte", y="quantite", text="quantite_a_tester",
                 title="🧪 Cartes enregistrées vs testées",
                 labels={"quantite": "Cartes enregistrées", "quantite_a_tester": "Cartes testées"},
-                color="pourcentage_reussite", color_continuous_scale="Blues")
+                color="pourcentage_reussite", color_continuous_scale=["#4682B4", "#2f4b7c", "#665191", "#a05195", "#d45087", "#f95d6a", "#ff7c43", "#ffa600"])
     fig.update_traces(texttemplate="%{text} testées", textposition="outside")
     fig.update_layout(margin=dict(t=40, b=20))
 
