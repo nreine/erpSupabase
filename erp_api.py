@@ -202,6 +202,7 @@ def accueil_dashboard():
     fig = px.pie(donut_data, names="Catégorie", values="Quantité", hole=0.5,title="🧪 Echantillonnage",
                 color_discrete_sequence=["#4682B4", "#27d636"])
     fig.update_traces(textinfo="label+percent")
+    fig.update_layout(margin=dict(t=40, b=20, r=500))
 
 
 # Affichage dans une carte élégante
