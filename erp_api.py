@@ -131,6 +131,7 @@ with st.sidebar:
     st.markdown("<h6 style='text-align: center; color: grey;'><em>Département Cartes et Partenariat DCP</em></h6>", unsafe_allow_html=True)
     
     menu = st.selectbox("Naviguer vers :", [
+        "🏠 Accueil",
         "➕ Enregistrement des lots",
         "📋 Visualisation des lots",
         "✏️ Modification / Suppression",
@@ -146,7 +147,177 @@ with st.sidebar:
         "🔐 Gestion des comptes utilisateurs"
     ])
 
-if menu == "➕ Enregistrement des lots":
+def accueil_dashboard():
+    import pandas as pd
+    st.markdown("<hr>", unsafe_allow_html=True)
+    st.markdown("<h2 style='text-align:center;'>Accueil</h2>", unsafe_allow_html=True)
+# 📦 Carte des lots enregistrés
+    lots_data = supabase.table("lots").select("type_lot", "quantite").execute().data
+    lots_df = pd.DataFrame(lots_data)
+
+# Total des lots
+    total_lots = len(lots_df)
+
+# Agrégation par type
+    repartition = lots_df.groupby("type_lot")["quantite"].sum().reset_index()
+
+# Histogramme
+    fig = px.bar(repartition, x="type_lot", y="quantite", text="quantite",
+                title="📊 Répartition des types de lots enregistrés",
+                labels={"type_lot": "Type de lot", "quantite": "Quantité"})
+    fig.update_traces(marker_color="steelblue", textposition="outside")
+    fig.update_layout(margin=dict(t=40, b=20))
+
+# Affichage dans une carte élégante
+    st.markdown(f"""
+        <div style='border:1px solid #ccc; padding:25px; border-radius:15px; margin-bottom:30px;'>
+            <h3 style='text-align:center;'>📦 Lots enregistrés</h3>
+            <p style='text-align:center; font-size:18px;'>
+                Nombre total de lots enregistrés : <strong>{total_lots}</strong>
+            </p>
+        </div>
+    """, unsafe_allow_html=True)
+
+    st.plotly_chart(fig, use_container_width=True)
+    st.divider()
+
+    
+# 🧪 Carte des tests qualité
+    controle_data = supabase.table("controle_qualite").select("quantite", "quantite_a_tester", "resultat").execute().data
+    controle_df = pd.DataFrame(controle_data)
+
+# Calculs
+    total_enregistree = controle_df["quantite"].sum()
+    total_testee = controle_df["quantite_a_tester"].sum()
+    pourcentage = round((total_testee / total_enregistree) * 100, 2) if total_enregistree > 0 else 0
+
+# Vérification du taux de réussite
+    taux_100 = controle_df["resultat"].eq("Réussite").all()
+
+# Données pour le diagramme en anneau
+    donut_data = pd.DataFrame({
+        "Catégorie": ["Cartes testées", "Cartes non testées"],
+        "Quantité": [total_testee, total_enregistree - total_testee]
+    })
+
+    fig = px.pie(donut_data, names="Catégorie", values="Quantité", hole=0.5,title="🧪 Echantillonnage",
+                color_discrete_sequence=["#4682B4", "#27d636"])
+    fig.update_traces(textinfo="label+percent")
+    fig.update_layout(width=400, height=300, margin=dict(t=40, b=20, r=500))
+
+
+# Affichage dans une carte élégante
+    description = f"""
+        Cartes testées : <strong>{total_testee}</strong>
+        """
+    if taux_100:
+        description += "<br><span style='color:green;'>✅ Taux de reussite des tests (100%)</span>"
+    st.markdown(f"""
+    <div style='border:1px solid #ccc; padding:25px; border-radius:15px; margin-bottom:30px;'>
+        <h3 style='text-align:center;'>🧪 Tests qualité</h3>
+        <p style='text-align:center; font-size:18px;'>{description}</p>
+    </div>
+    """, unsafe_allow_html=True)
+
+    st.plotly_chart(fig, use_container_width=True)
+    
+    
+# 🧪 Carte des tests qualité
+    controle_data = supabase.table("controle_qualite").select("type_carte", "quantite", "quantite_a_tester").execute().data
+    controle_df = pd.DataFrame(controle_data)
+
+# Calcul du total testé
+    total_testee = controle_df["quantite_a_tester"].sum()
+
+# Agrégation par type
+    repartition = controle_df.groupby("type_carte").agg({
+        "quantite": "sum",
+        "quantite_a_tester": "sum"
+    }).reset_index()
+    repartition["pourcentage_reussite"] = (repartition["quantite_a_tester"] / repartition["quantite"]) * 100
+# Graphique
+    fig = px.bar(repartition, x="type_carte", y="quantite", text="quantite_a_tester",
+                title="🧪 Cartes enregistrées vs testées",
+                labels={"quantite": "Cartes enregistrées", "quantite_a_tester": "Cartes testées"},
+                color="pourcentage_reussite", color_continuous_scale="Blues")
+    fig.update_traces(texttemplate="%{text} testées", textposition="outside")
+    fig.update_layout(margin=dict(t=40, b=20))
+
+    st.plotly_chart(fig, use_container_width=True)
+    st.divider()
+
+
+# 🔹 Récupération des données des agences
+    agences_data = supabase.table("agences_livraison").select("agence", "pays").execute().data
+    agences_df = pd.DataFrame(agences_data)
+
+    # 🔹 Récupération des données des expéditions
+    expeditions_data = supabase.table("expedition").select("agence", "pays", "statut").execute().data
+    expeditions_df = pd.DataFrame(expeditions_data)
+
+    # ✅ 1. Affichage du total des agences
+    total_agences = agences_df["agence"].nunique()
+    description = f"""
+        Agences disponibles : <strong>{total_agences}</strong>
+        """
+    st.markdown(f"""
+    <div style='border:1px solid #ccc; padding:25px; border-radius:15px; margin-bottom:30px;'>
+        <h3 style='text-align:center;'>🏢 Agences de livraison</h3>
+        <p style='text-align:center; font-size:18px;'>{description}</p>
+    </div>
+    """, unsafe_allow_html=True)
+
+    # ✅ 2. Préparation des données pour le graphique
+    if not expeditions_df.empty:
+        # Filtrer uniquement les expéditions avec statut "expédié"
+        expeditions_filtre = expeditions_df[expeditions_df["statut"].str.lower() == "expédié"]
+
+        # Calculer la quantité par agence et filiale (nombre d'enregistrements)
+        repartition = expeditions_filtre.groupby(["agence", "pays"]).size().reset_index(name="quantite")
+
+        # ✅ Graphique combiné : barres groupées par agence et filiale
+        fig = px.bar(
+            repartition,
+            x="agence",
+            y="quantite",
+            color="pays",
+            barmode="group",
+            title="📦 Expéditions réalisées par agence et filiale (statut = expédié)",
+            labels={"agence": "Agence", "quantite": "Nombre d'expéditions", "pays": "Filiale"}
+        )
+        fig.update_layout(margin=dict(t=40, b=20), legend_title_text="Filiale")
+        st.plotly_chart(fig, use_container_width=True)
+    else:
+        st.warning("Aucune donnée d'expédition disponible pour le moment.")
+    st.divider()
+
+    
+# 🔹 Récupération des données des utilisateurs
+    utilisateurs_data = supabase.table("utilisateurs").select("identifiant", "actif").execute().data
+    utilisateurs_df = pd.DataFrame(utilisateurs_data)
+
+# ✅ Vérification si la table contient des données
+    if not utilisateurs_df.empty:
+        total_utilisateurs = len(utilisateurs_df)
+        comptes_actifs = utilisateurs_df[utilisateurs_df["actif"] == True].shape[0]
+        comptes_inactifs = total_utilisateurs - comptes_actifs
+
+    # ✅ Affichage sous forme de card
+        st.markdown("""
+            <div style="background-color:#4682B4; padding:20px; border-radius:10px; text-align:center; box-shadow:0 2px 5px rgba(0,0,0,0.1);">
+                <h4>👥 Utilisateurs</h4>
+                <h2>{}</h2>
+                <p>Comptes actifs : <b>{}</b> | Comptes inactifs : <b>{}</b></p>
+            </div>
+        """.format(total_utilisateurs, comptes_actifs, comptes_inactifs), unsafe_allow_html=True)
+    else:
+        st.warning("Aucun utilisateur enregistré pour le moment.")
+    st.divider()
+
+if menu == "🏠 Accueil":
+    accueil_dashboard()
+    
+elif menu == "➕ Enregistrement des lots":
     enregistrer_lot()
 
 
