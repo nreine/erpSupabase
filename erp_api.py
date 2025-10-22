@@ -1096,10 +1096,11 @@ if menu == "📦 Conditionnement des cartes":
             for i, (type_emballage, cartes_emballees) in enumerate(paquets, 1):
                 st.success(f"📦 Conditionnement du lot : {cartes_emballees} cartes pour {type_emballage} ")
                 remarque = st.text_input(
-                        f"📝 Remarque sur {type_emballage}",
-                        value="RAS",
-                        key=f"remarque_{type_emballage}"
+                    f"📝 Remarque pour le paquet {i} ({type_emballage})",
+                    value="RAS",
+                    key=f"remarque_{i}_{type_emballage}_{selected_filiale}"
                 )
+                
                 tableau_conditionnement.append({
                     "Nom du lot": ", ".join([lot[1] for lot in lots_groupes]),
                     "Type de lot": type_lot,
