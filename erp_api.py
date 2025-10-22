@@ -1096,7 +1096,7 @@ if menu == "📦 Conditionnement des cartes":
             for i, (type_emballage, cartes_emballees) in enumerate(paquets, 1):
                 st.success(f"📦 Conditionnement du lot : {cartes_emballees} cartes pour {type_emballage} ")
                 remarque = st.text_input(
-                        f"📝 Remarque sur le conditionnement",
+                        f"📝 Remarque sur {type_emballage}",
                         value="RAS",
                         key=f"remarque_{type_emballage}"
                 )
