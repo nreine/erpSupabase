@@ -1094,11 +1094,13 @@ if menu == "📦 Conditionnement des cartes":
             paquets = calcul_paquets_conditionnement(total, selected_filiale)
 
             for i, (type_emballage, cartes_emballees) in enumerate(paquets, 1):
-                st.success(f"📦 Conditionnement du lot : {cartes_emballees} cartes pour {type_emballage} ")
+                st.success(f"📦 Conditionnement du lot : {cartes_emballees} cartes pour {type_emballage} ")         
+                import uuid
+                unique_id = str(uuid.uuid4())[:8]  # Génère un identifiant court unique
                 remarque = st.text_input(
                     f"📝 Remarque pour le paquet {i} ({type_emballage})",
                     value="RAS",
-                    key=f"remarque_{i}_{type_emballage}_{selected_filiale}"
+                    key=f"remarque_{i}_{type_emballage}_{unique_id}"
                 )
                 
                 tableau_conditionnement.append({
