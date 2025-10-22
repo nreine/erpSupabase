@@ -1098,7 +1098,7 @@ if menu == "📦 Conditionnement des cartes":
                 import uuid
                 unique_id = str(uuid.uuid4())[:8]  # Génère un identifiant court unique
                 remarque = st.text_input(
-                    f"📝 Remarque pour le paquet {i} ({type_emballage})",
+                    f"📝 Remarque sur le conditionnement ({type_emballage})",
                     value="RAS",
                     key=f"remarque_{i}_{type_emballage}_{unique_id}"
                 )
