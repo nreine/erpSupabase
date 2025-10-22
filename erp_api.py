@@ -1399,8 +1399,12 @@ elif menu == "📇 Annuaire des livreurs":
             contact = st.text_input("Contact")
         submit_ajout = st.form_submit_button("✅ Ajouter")
         if submit_ajout:
-            try:
+            try:          
+# Récupérer le dernier ID
+                last_id_data = supabase.table("livreurs").select("id").order("id", desc=True).limit(1).execute().data
+                next_id = (last_id_data[0]["id"] + 1) if last_id_data else 1
                 supabase.table("livreurs").insert({
+                    "id": next_id,
                     "agence": agence,
                     "nom": nom,
                     "prenom": prenom,
