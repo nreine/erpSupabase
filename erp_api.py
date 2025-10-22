@@ -1242,7 +1242,7 @@ elif menu == "⚙️ Gestion des agences":
     action = st.radio("Choisissez une action :", ["Ajouter", "Modifier", "Supprimer"])
 
     if action == "Ajouter":
-        st.subheader("➕ Ajouter une nouvelle agence")
+        st.subheader("➕ Ajouter une nouvelle agence/pays")
         nouveau_pays = st.text_input("Pays")
         nouvelle_agence = st.text_input("Nom de l'agence")
         if st.button("✅ Ajouter"):
