@@ -551,7 +551,7 @@ elif menu == "🗂 Inventaire des tests":
             'May': 'Mai', 'June': 'Juin', 'July': 'Juillet', 'August': 'Août',
             'September': 'Septembre', 'October': 'Octobre', 'November': 'Novembre', 'December': 'Décembre'
         }
-        semaine_en_fr = {
+    semaine_en_fr = {
             'Monday': 'Lundi', 'Tuesday': 'Mardi', 'Wednesday': 'Mercredi', 'Thursday': 'Jeudi',
             'Friday': 'Vendredi', 'Saturday': 'Samedi', 'Sunday': 'Dimanche'
         }
