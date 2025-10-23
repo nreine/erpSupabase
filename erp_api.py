@@ -445,7 +445,25 @@ elif menu == "🧪 Contrôle qualité":
         st.warning("Aucun lot disponible.")
         st.stop()
 
-    lot_dict = {f"{lot['id']} - {lot['nom_lot']}": lot["id"] for lot in lots}
+    # 🔍 Récupérer tous les lots
+    lots_response = supabase.table("lots").select("id", "nom_lot").execute()
+    lots = lots_response.data
+    
+
+    # 🧼 Récupérer les lots déjà contrôlés
+    controle_response = supabase.table("controle_qualite").select("lot_id").execute()
+    lots_controles = [row["lot_id"] for row in controle_response.data]
+
+    # ✅ Filtrer les lots non contrôlés
+    lots_non_controles = [lot for lot in lots if lot["id"] not in lots_controles]
+
+    # 🛑 Si tous les lots sont déjà contrôlés
+    if not lots_non_controles:
+        st.warning("✅ Tous les lots ont déjà été contrôlés.")
+        st.stop()
+
+    # 🎯 Affichage de la liste filtrée
+    lot_dict = {f"{lot['id']} - {lot['nom_lot']}": lot["id"] for lot in lots_non_controles}
     selected_lot = st.selectbox("Sélectionnez un lot :", list(lot_dict.keys()))
     lot_id = lot_dict[selected_lot]
 
@@ -496,6 +514,7 @@ elif menu == "🧪 Contrôle qualité":
                 "resultat": resultat_test
             }).execute()
         st.success("✅ Contrôle qualité enregistré avec succès.")
+        st.rerun()
 
     # Résumé
     if types_selectionnes:
