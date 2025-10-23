@@ -545,17 +545,27 @@ elif menu == "🗂 Inventaire des tests":
         row["filiale"] = lot_info[1]
 
     df = pd.DataFrame(controle_data)
+    
+    mois_en_fr = {
+            'January': 'Janvier', 'February': 'Février', 'March': 'Mars', 'April': 'Avril',
+            'May': 'Mai', 'June': 'Juin', 'July': 'Juillet', 'August': 'Août',
+            'September': 'Septembre', 'October': 'Octobre', 'November': 'Novembre', 'December': 'Décembre'
+        }
+        semaine_en_fr = {
+            'Monday': 'Lundi', 'Tuesday': 'Mardi', 'Wednesday': 'Mercredi', 'Thursday': 'Jeudi',
+            'Friday': 'Vendredi', 'Saturday': 'Samedi', 'Sunday': 'Dimanche'
+        }
 
     if df.empty:
         st.warning("Aucun test de contrôle qualité enregistré.")
     else:
         df["date_controle"] = pd.to_datetime(df["date_controle"])
         df["Année"] = df["date_controle"].dt.year
-        df["Mois"] = df["date_controle"].dt.month_name()
+        df["Mois"] = df["date_controle"].dt.month_name().map(mois_en_fr)
         df["Trimestre"] = df["date_controle"].dt.quarter
         df["Semaine"] = df["date_controle"].dt.isocalendar().week
         df["Jour"] = df["date_controle"].dt.day
-        df["Jour_Semaine"] = df["date_controle"].dt.day_name()
+        df["Jour_Semaine"] = df["date_controle"].dt.day_name().map(semaine_en_fr)
 
         # Filtres
         st.sidebar.header("🔎 Filtres Inventaire")
