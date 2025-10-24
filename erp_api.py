@@ -436,7 +436,7 @@ elif menu == "🧪 Contrôle qualité":
     key = st.secrets["supabase_key"]
     supabase = create_client(url, key)
 
-    st.markdown("## 🧪 Enregistrement d'un contrôle qualité")
+    st.markdown("## 🧪 Contrôle qualité")
 
     # Récupération des lots
     response = supabase.table("lots").select("id", "nom_lot").execute()
@@ -525,7 +525,7 @@ elif menu == "🧪 Contrôle qualité":
 
 
 elif menu == "🗂 Inventaire des tests":
-    st.markdown("## 🗂 Inventaire des tests de contrôle qualité")
+    st.markdown("## 🗂 Inventaire du contrôle qualité")
 
     # Récupération des données depuis Supabase
     response = supabase.table("controle_qualite").select(
@@ -1426,7 +1426,7 @@ elif menu == "🚚 Expédition des lots":
 
 #Module annuaire de livraison
 elif menu == "📇 Annuaire des livreurs":
-    st.markdown("## 📇 Annuaire des livreurs par agence")
+    st.markdown("## 📇 Annuaire des livreurs")
 
     # 🔍 Récupération des livreurs
     try:
@@ -1523,7 +1523,7 @@ elif menu == "📇 Annuaire des livreurs":
 #Module visualisation des expéditions
 
 elif menu == "📦 Visualisation des expéditions":
-    st.markdown("## 📦 Indicateurs des expéditions")
+    st.markdown("## 📦 Visualisation des expéditions")
 
     # 🔍 Récupération des expéditions
     try:
