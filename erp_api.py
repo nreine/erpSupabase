@@ -1148,23 +1148,37 @@ if menu == "📦 Conditionnement des cartes":
         df_conditionnement = pd.DataFrame(tableau_conditionnement)
         st.dataframe(df_conditionnement, use_container_width=True)
 
-        # Enregistrement dans Supabase
+        # ✅ Enregistrement dans Supabase
         if st.button("✅ Enregistrer le conditionnement"):
             for _, row in df_conditionnement.iterrows():
-                supabase.table("conditionnement").insert({
-                    "lot_id": None,
-                    "type_lot": row["Type de lot"],
-                    "filiale": row["Filiale"],
-                    "type_emballage": row["Conditionnement"],
-                    "nombre_cartes": row["Quantité"],
-                    "date_conditionnement": str(selected_date),
-                    "operateur": st.session_state["utilisateur"],
-                    "remarque": row["Remarque"],
-                    "packs": row["Packs VIP"],
-                    "nom_lot": row["Nom du lot"]
-                }).execute()
-            st.success("✅ Conditionnement enregistré avec succès.")
+                nom_lot = row.get("Nom du lot")
+                type_emballage = row.get("Conditionnement")
+                filiale = row.get("Filiale")
 
+        # 🔍 Vérification des doublons
+                doublon = supabase.table("conditionnement").select("id")\
+                .eq("nom_lot", nom_lot)\
+                .eq("date_conditionnement", str(selected_date))\
+                .eq("type_emballage", type_emballage)\
+                .eq("filiale", filiale).execute().data
+
+                if doublon:
+                    st.warning(f"⚠️ Le conditionnement du lot {nom_lot} ({type_emballage}) pour la filiale {filiale} à la date {selected_date} existe déjà.")
+                else:
+            # ✅ Enregistrement si pas de doublon
+                    supabase.table("conditionnement").insert({
+                        "lot_id": None,
+                        "type_lot": row["Type de lot"],
+                        "filiale": filiale,
+                        "type_emballage": type_emballage,
+                        "nombre_cartes": row["Quantité"],
+                        "date_conditionnement": str(selected_date),
+                        "operateur": st.session_state["utilisateur"],
+                        "remarque": row["Remarque"],
+                        "packs": row["Packs VIP"],
+                        "nom_lot": nom_lot
+                    }).execute()
+                    st.success("✅ Conditionnement enregistré avec succès.")
 
 #Inventaire de conditionnements
 elif menu == "🗂 Inventaire des conditionnements":
@@ -1270,16 +1284,24 @@ elif menu == "⚙️ Gestion des agences":
     # 🛠 Choix de l'action
     action = st.radio("Choisissez une action :", ["Ajouter", "Modifier", "Supprimer"])
 
-    if action == "Ajouter":
-        st.subheader("➕ Ajouter une nouvelle agence/pays")
-        nouveau_pays = st.text_input("Pays")
-        nouvelle_agence = st.text_input("Nom de l'agence")
-        if st.button("✅ Ajouter"):
+    if st.button("✅ Ajouter"):
             if nouveau_pays and nouvelle_agence:
                 try:
-                    supabase.table("agences_livraison").insert({"pays": nouveau_pays, "agence": nouvelle_agence}).execute()
-                    st.success(f"✅ Agence ajoutée pour {nouveau_pays}")
-                    st.rerun()
+            # 🔍 Vérification des doublons
+                    doublon = supabase.table("agences_livraison").select("pays", "agence")\
+                    .eq("pays", nouveau_pays)\
+                    .eq("agence", nouvelle_agence).execute().data
+
+                    if doublon:
+                        st.warning(f"⚠️ L'agence '{nouvelle_agence}' pour le pays '{nouveau_pays}' existe déjà.")
+                    else:
+                # ✅ Ajout si pas de doublon
+                        supabase.table("agences_livraison").insert({
+                            "pays": nouveau_pays,
+                            "agence": nouvelle_agence
+                        }).execute()
+                        st.success(f"✅ Agence ajoutée pour {nouveau_pays}")
+                        st.rerun()
                 except Exception as e:
                     st.warning(f"⚠️ Erreur : {e}")
             else:
@@ -1375,22 +1397,30 @@ elif menu == "🚚 Expédition des lots":
 
     # ✅ Enregistrement de l'expédition
     if st.button("✅ Enregistrer l'expédition") and lot_id and agent_id:
-        try:
+        try:         
+            # Récupérer le dernier ID existant
             last_id_data = supabase.table("expedition").select("id").order("id", desc=True).limit(1).execute().data
-            next_id = (last_id_data[0]["id"] + 1) if last_id_data else 1
-            supabase.table("expedition").insert({
-                "id": next_id,
-                "lot_id": lot_id,
-                "pays": pays,
-                "statut": statut,
-                "bordereau": bordereau,
-                "reference": reference,
-                "agence": agence,
-                "agent_id": agent_id,
-                "date_expedition": str(date.today())
-            }).execute()
-            st.success("✅ Expédition enregistrée avec succès.")
-            st.rerun()
+            next_id = (last_id_data[0]["id"] + 1) if last_id_data else 1           
+            
+            doublon = supabase.table("expedition").select("lot_id")\
+                .eq("lot_id", lot_id).execute().data
+
+            if doublon:
+                st.warning("⚠️ Ce lot a déjà été enregistré pour une expédition.")
+            else:
+            # ✅ Enregistrement si pas de doublon
+                supabase.table("expedition").insert({
+                    "lot_id": lot_id,
+                    "pays": pays,
+                    "statut": statut,
+                    "bordereau": bordereau,
+                    "reference": reference,
+                    "agence": agence,
+                    "agent_id": agent_id,
+                    "date_expedition": str(date.today())
+                }).execute()
+                st.success("✅ Expédition enregistrée avec succès.")
+                st.rerun()
         except Exception as e:
             st.error(f"Erreur lors de l'enregistrement : {e}")
 
@@ -1428,19 +1458,25 @@ elif menu == "📇 Annuaire des livreurs":
             contact = st.text_input("Contact")
         submit_ajout = st.form_submit_button("✅ Ajouter")
         if submit_ajout:
-            try:          
-# Récupérer le dernier ID
-                last_id_data = supabase.table("livreurs").select("id").order("id", desc=True).limit(1).execute().data
-                next_id = (last_id_data[0]["id"] + 1) if last_id_data else 1
-                supabase.table("livreurs").insert({
-                    "id": next_id,
-                    "agence": agence,
-                    "nom": nom,
-                    "prenom": prenom,
-                    "contact": contact
-                }).execute()
-                st.success(f"✅ Livreurs ajouté pour l'agence {agence}")
-                st.rerun()
+            try:
+               # 🔍 Vérification des doublons : même agence + même nom + même prénom
+                doublon = supabase.table("livreurs").select("agence", "nom", "prenom")\
+                    .eq("agence", agence)\
+                    .eq("nom", nom)\
+                    .eq("prenom", prenom).execute().data
+
+                if doublon:
+                    st.warning(f"⚠️ Le livreur {nom} {prenom} existe déjà pour l'agence {agence}.")
+                else:
+                # ✅ Ajout si pas de doublon
+                    supabase.table("livreurs").insert({
+                        "agence": agence,
+                        "nom": nom,
+                        "prenom": prenom,
+                        "contact": contact
+                    }).execute()
+                    st.success(f"✅ Livreurs ajouté pour l'agence {agence}")
+                    st.rerun()
             except Exception as e:
                 st.error(f"Erreur lors de l'ajout : {e}")
 
