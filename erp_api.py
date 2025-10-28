@@ -280,7 +280,7 @@ def accueil_dashboard():
             y="quantite",
             color="pays",
             barmode="group",
-            title="📦 Expéditions réalisées par agence et filiale (statut = expédié)",
+            title="📦 Expéditions par agence et par filiale (statut = expédié)",
             labels={"agence": "Agence", "quantite": "Nombre d'expéditions", "pays": "Filiale"}
         )
         fig.update_layout(margin=dict(t=40, b=20), legend_title_text="Filiale")
