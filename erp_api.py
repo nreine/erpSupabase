@@ -134,7 +134,7 @@ with st.sidebar:
         "🏠 Accueil",
         "➕ Enregistrement des lots",
         "📋 Visualisation des lots",
-        "✏️ Modification / Suppression",
+        "✏️ Modification/Suppression Lot",
         "🧪 Contrôle qualité",
         "🗂 Inventaire des tests",
         "📊 Graphiques et Analyses",
@@ -363,7 +363,7 @@ elif menu == "📋 Visualisation des lots":
         st.warning("Aucun lot enregistré dans la base de données Supabase.")
 
 
-elif menu == "✏️ Modification / Suppression":
+elif menu == "✏️ Modification/Suppression Lot":
     from supabase import create_client
     import pandas as pd
     import math
