@@ -595,9 +595,9 @@ elif menu == "🗂 Inventaire des tests":
         nb_reussites = df_filtered[df_filtered["resultat"] == "Réussite"].shape[0]
         nb_echecs = df_filtered[df_filtered["resultat"] == "Échec"].shape[0]
         col1, col2, col3 = st.columns(3)
-        col1.metric("Total cartes testées", total_testees)
-        col2.metric("Tests réussis", nb_reussites)
-        col3.metric("Tests échoués", nb_echecs)
+        col1.metric("Total de cartes testées", total_testees)
+        col2.metric("Nombre de réussite", nb_reussites)
+        col3.metric("Nombre d'échecs", nb_echecs)
 
         # Gestion des tests enregistrés
         st.subheader("🛠️ Gestion des tests enregistrés")
