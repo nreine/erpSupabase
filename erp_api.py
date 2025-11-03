@@ -826,7 +826,7 @@ elif menu == "📊 Graphiques et Analyses":
               )
            ])
         fig.update_layout(
-            title="📦 Production mensuelle des cartes (Mesh3D)",
+            title="📦 Production mensuelle des cartes",
             scene=dict(
                 xaxis=dict(title="Mois", tickvals=x, ticktext=production_mensuelle["Mois"]),
                 yaxis=dict(title=""),
