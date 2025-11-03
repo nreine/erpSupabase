@@ -771,7 +771,7 @@ elif menu == "📊 Graphiques et Analyses":
                 mode="text", showlegend=False
             ))
         fig.update_layout(
-            title="📊 Répartition des lots par type de lot (Cônes 3D)",
+            title="📊 Répartition des lots par type de production (Cônes 3D)",
             scene=dict(
                 xaxis=dict(title="Type de lot", tickvals=list(range(len(types_lot))), ticktext=types_lot),
                 yaxis=dict(title=""),
