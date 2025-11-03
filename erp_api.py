@@ -945,7 +945,7 @@ elif menu == "📊 Graphiques et Analyses":
             fig.add_trace(go.Scatter3d(x=[i], y=[0], z=[height + 100],
                                        text=[f"{label}<br>{int(height)} tests"], mode="text", showlegend=False))
         fig.update_layout(
-            title="📊 Nombre total de tests par mois (Pyramides 3D)",
+            title="📊 Total de tests par mois",
             scene=dict(
                 xaxis=dict(title="Mois", tickvals=list(range(len(tests_mensuels))), ticktext=tests_mensuels["Mois"].tolist()),
                 yaxis=dict(title=""),
@@ -1012,7 +1012,7 @@ elif menu == "📊 Graphiques et Analyses":
             )
         ])
         fig.update_layout(
-            title="📈 Total des tests journaliers par jour de la semaine (Courbe 3D)",
+            title="📈 Total des tests journaliers suivant le jour de la semaine",
             scene=dict(
                 xaxis=dict(title="Jour", tickvals=x, ticktext=labels),
                 yaxis=dict(title=""),
