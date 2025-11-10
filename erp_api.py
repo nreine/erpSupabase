@@ -499,7 +499,7 @@ elif menu == "🧪 Contrôle qualité":
     remarque = st.text_area("Remarques / Anomalies", value="RAS")
     resultat_test = st.radio("Résultat du test :", ["Réussite", "Échec"], key="resultat_test")
 
-    if st.button("Enregistrer le contrôle qualité"):       
+    if st.button("Enregistrer le contrôle qualité"):             
         last_id_data = supabase.table("controle_qualite").select("id").order("id", desc=True).limit(1).execute().data
         next_id = (last_id_data[0]["id"] + 1) if last_id_data else 1
         for type_carte in types_selectionnes:
@@ -513,6 +513,7 @@ elif menu == "🧪 Contrôle qualité":
                 "remarque": remarque,
                 "resultat": resultat_test
             }).execute()
+        next_id += 1
         st.success("✅ Contrôle qualité enregistré avec succès.")
         st.rerun()
 
