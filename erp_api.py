@@ -513,7 +513,6 @@ elif menu == "🧪 Contrôle qualité":
                 "remarque": remarque,
                 "resultat": resultat_test
             }).execute()
-        next_id += 1
         st.success("✅ Contrôle qualité enregistré avec succès.")
         st.rerun()
 
