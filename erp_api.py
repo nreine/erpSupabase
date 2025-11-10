@@ -519,17 +519,17 @@ elif menu == "🧪 Contrôle qualité":
                      "resultat": resultat_test
                   }).execute()
 
-                  if response.status_code == 201:  # ✅ Code 201 = insertion réussie
-                      insertion_reussie = True
-                  else:
-                      st.error(f"❌ Erreur Supabase : {response}")
-                      st.stop()
+                if response.status_code == 201:  # ✅ Code 201 = insertion réussie
+                    insertion_reussie = True
+                else:
+                    st.error(f"❌ Erreur Supabase : {response}")
+                    st.stop()
 
-               except Exception as e:
-                   st.error(f"❌ Exception lors de l'enregistrement : {e}")
-                   st.stop()
+                except Exception as e:
+                    st.error(f"❌ Exception lors de l'enregistrement : {e}")
+                    st.stop()
 
-               next_id += 1
+                next_id += 1
 
            if insertion_reussie:
                st.success("✅ Contrôle qualité enregistré avec succès.")
