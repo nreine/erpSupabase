@@ -527,8 +527,8 @@ elif menu == "🧪 Contrôle qualité":
                      st.stop()
 
          except Exception as e:
-            st.error(f"❌ Exception lors de l'enregistrement : {e}")
-            st.stop()
+             st.error(f"❌ Exception lors de l'enregistrement : {e}")
+             st.stop()
 
          next_id += 1
 
