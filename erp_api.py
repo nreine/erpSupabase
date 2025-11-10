@@ -500,6 +500,7 @@ elif menu == "🧪 Contrôle qualité":
     resultat_test = st.radio("Résultat du test :", ["Réussite", "Échec"], key="resultat_test")
 
       
+    
     if st.button("Enregistrer le contrôle qualité"):             
         last_id_data = supabase.table("controle_qualite").select("id").order("id", desc=True).limit(1).execute().data
         next_id = (last_id_data[0]["id"] + 1) if last_id_data else 1
@@ -508,35 +509,34 @@ elif menu == "🧪 Contrôle qualité":
 
         for type_carte in types_selectionnes:
             try:
-                 response = supabase.table("controle_qualite").insert({
-                     "id": next_id,
-                     "lot_id": lot_id,
-                     "type_carte": type_carte,
-                     "quantite": quantites[type_carte],
-                     "quantite_a_tester": quantites_a_tester[type_carte],
-                     "date_controle": str(date.today()),
-                     "remarque": remarque,
-                     "resultat": resultat_test
-                  }).execute()
+                response = supabase.table("controle_qualite").insert({
+                   "id": next_id,
+                   "lot_id": lot_id,
+                   "type_carte": type_carte,
+                   "quantite": quantites[type_carte],
+                   "quantite_a_tester": quantites_a_tester[type_carte],
+                   "date_controle": str(date.today()),
+                   "remarque": remarque,
+                   "resultat": resultat_test
+                 }).execute()
 
-                  if response.status_code == 201:  # ✅ Code 201 = insertion réussie
-                      insertion_reussie = True
-                  else:
-                      st.error(f"❌ Erreur Supabase : {response}")
-                      st.stop()
+                 if response.status_code == 201:  # ✅ Code 201 = insertion réussie
+                     insertion_reussie = True
+                 else:
+                     st.error(f"❌ Erreur Supabase : {response}")
+                     st.stop()
 
-                except Exception as e:
-                    st.error(f"❌ Exception lors de l'enregistrement : {e}")
-                    st.stop()
+                 except Exception as e:
+                     st.error(f"❌ Exception lors de l'enregistrement : {e}")
+                     st.stop()
 
-                next_id += 1
+                 next_id += 1
 
-           if insertion_reussie:
-               st.success("✅ Contrôle qualité enregistré avec succès.")
-               st.rerun()
-           else:
-               st.warning("⚠️ Aucun contrôle qualité n'a été enregistré.")
-
+        if insertion_reussie:
+            st.success("✅ Contrôle qualité enregistré avec succès.")
+            st.rerun()
+        else:
+            st.warning("⚠️ Aucun contrôle qualité n'a été enregistré.")
 
     # Résumé
     if types_selectionnes:
