@@ -526,17 +526,17 @@ elif menu == "🧪 Contrôle qualité":
                      st.error(f"❌ Erreur Supabase : {response}")
                      st.stop()
 
-                except Exception as e:
-                     st.error(f"❌ Exception lors de l'enregistrement : {e}")
-                     st.stop()
+        except Exception as e:
+            st.error(f"❌ Exception lors de l'enregistrement : {e}")
+            st.stop()
 
-                next_id += 1
+        next_id += 1
 
-        if insertion_reussie:
-            st.success("✅ Contrôle qualité enregistré avec succès.")
-            st.rerun()
-        else:
-            st.warning("⚠️ Aucun contrôle qualité n'a été enregistré.")
+    if insertion_reussie:
+        st.success("✅ Contrôle qualité enregistré avec succès.")
+        st.rerun()
+    else:
+        st.warning("⚠️ Aucun contrôle qualité n'a été enregistré.")
 
     # Résumé
     if types_selectionnes:
