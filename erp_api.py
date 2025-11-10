@@ -502,8 +502,10 @@ elif menu == "🧪 Contrôle qualité":
 
     
 if st.button("Enregistrer le contrôle qualité"):             
+    
     last_id_data = supabase.table("controle_qualite").select("id").order("id", desc=True).limit(1).execute().data
     next_id = (last_id_data[0]["id"] + 1) if last_id_data else 1
+
 
     insertion_reussie = False  # Initialisation
 
