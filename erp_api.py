@@ -499,13 +499,13 @@ elif menu == "🧪 Contrôle qualité":
     remarque = st.text_area("Remarques / Anomalies", value="RAS")
     resultat_test = st.radio("Résultat du test :", ["Réussite", "Échec"], key="resultat_test")
 
-      
+
     
 if st.button("Enregistrer le contrôle qualité"):             
     last_id_data = supabase.table("controle_qualite").select("id").order("id", desc=True).limit(1).execute().data
     next_id = (last_id_data[0]["id"] + 1) if last_id_data else 1
 
-    insertion_reussie = False  # ✅ Initialisation ici
+    insertion_reussie = False  # Initialisation
 
     for type_carte in types_selectionnes:
         try:
@@ -520,23 +520,24 @@ if st.button("Enregistrer le contrôle qualité"):
                 "resultat": resultat_test
             }).execute()
 
-            if response.status_code == 201:  # ✅ Insertion réussie
+            if response.error is None:
                 insertion_reussie = True
             else:
-                st.error(f"❌ Erreur Supabase : {response}")
+                st.error(f"❌ Erreur Supabase : {response.error}")
                 st.stop()
 
         except Exception as e:
             st.error(f"❌ Exception lors de l'enregistrement : {e}")
             st.stop()
 
-        next_id += 1  # ✅ Incrémentation correcte
+        next_id += 1
 
     if insertion_reussie:
         st.success("✅ Contrôle qualité enregistré avec succès.")
         st.rerun()
     else:
         st.warning("⚠️ Aucun contrôle qualité n'a été enregistré.")
+
 
 
     # Résumé
