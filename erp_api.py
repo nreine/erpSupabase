@@ -530,7 +530,7 @@ elif menu == "🗂 Inventaire des tests":
     # Récupération des données depuis Supabase
     response = supabase.table("controle_qualite").select(
         "id, date_controle, type_carte, quantite, quantite_a_tester, remarque, resultat, lot_id"
-    ).range(0, 5000).execute()
+    ).execute()
 
     controle_data = response.data
 
