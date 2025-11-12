@@ -449,10 +449,21 @@ elif menu == "🧪 Contrôle qualité":
     lots_response = supabase.table("lots").select("id", "nom_lot").execute()
     lots = lots_response.data
     
+    # Pagination pour récupérer tous les lot_id contrôlés
+    page_size = 1000
+    offset = 0
+    lots_controles = []
 
-    # 🧼 Récupérer les lots déjà contrôlés
-    controle_response = supabase.table("controle_qualite").select("lot_id").execute()
-    lots_controles = [row["lot_id"] for row in controle_response.data]
+    while True:
+        controle_response = supabase.table("controle_qualite") \
+            .select("lot_id") \
+            .range(offset, offset + page_size - 1) \
+            .execute()
+    
+        if not controle_response.data:
+            break
+        lots_controles.extend([row["lot_id"] for row in controle_response.data])
+        offset += page_size
 
     # ✅ Filtrer les lots non contrôlés
     lots_non_controles = [lot for lot in lots if lot["id"] not in lots_controles]
@@ -527,12 +538,23 @@ elif menu == "🧪 Contrôle qualité":
 elif menu == "🗂 Inventaire des tests":
     st.markdown("## 🗂 Inventaire du contrôle qualité")
 
-    # Récupération des données depuis Supabase
-    response = supabase.table("controle_qualite").select(
-        "id, date_controle, type_carte, quantite, quantite_a_tester, remarque, resultat, lot_id"
-    ).execute()
+    # Pagination pour récupérer toutes les lignes
+    page_size = 1000
+    offset = 0
+    all_data = []
 
-    controle_data = response.data
+    while True:
+        response = supabase.table("controle_qualite") \
+            .select("id, date_controle, type_carte, quantite, quantite_a_tester, remarque, resultat, lot_id") \
+            .range(offset, offset + page_size - 1) \
+            .execute()
+    
+        if not response.data:
+            break  # Stop si plus de données
+        all_data.extend(response.data)
+        offset += page_size
+
+    controle_data = all_data
 
     # Récupération des noms de lots et filiales
     lots_response = supabase.table("lots").select("id, nom_lot, filiale").execute()
