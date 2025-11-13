@@ -330,9 +330,24 @@ elif menu == "📋 Visualisation des lots":
 
     st.markdown("## 📋 Liste des lots enregistrés")
 
-    # Récupération des données depuis Supabase
-    response = supabase.table("lots").select("*").execute()
-    lots_data = response.data
+    
+# Pagination pour récupérer tous les lots
+    page_size = 1000
+    offset = 0
+    all_lots = []
+
+    while True:
+        response = supabase.table("lots") \
+            .select("*") \
+            .range(offset, offset + page_size - 1) \
+            .execute()
+        
+        if not response.data:
+            break  # Stop si plus de données
+        all_lots.extend(response.data)
+        offset += page_size
+
+    lots_data = all_lots
 
     if lots_data:
         df = pd.DataFrame(lots_data)
