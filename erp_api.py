@@ -1221,8 +1221,23 @@ if menu == "📦 Conditionnement des cartes":
 elif menu == "🗂 Inventaire des conditionnements":
     st.markdown("## 🗂 Inventaire des conditionnements")
 
-    response = supabase.table("conditionnement").select("*").execute()
-    data = response.data
+# Pagination pour récupérer tous les conditionnements
+    page_size = 1000
+    offset = 0
+    all_conditionnements = []
+
+    while True:
+        response = supabase.table("conditionnement") \
+            .select("*") \
+            .range(offset, offset + page_size - 1) \
+            .execute()
+        
+        if not response.data:
+            break  # Stop si plus de données
+        all_conditionnements.extend(response.data)
+        offset += page_size
+
+    data = all_conditionnements
 
     if not data:
         st.warning("Aucun conditionnement enregistré.")
