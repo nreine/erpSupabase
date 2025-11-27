@@ -1336,28 +1336,33 @@ elif menu == "⚙️ Gestion des agences":
     # 🛠 Choix de l'action
     action = st.radio("Choisissez une action :", ["Ajouter", "Modifier", "Supprimer"])
 
-    if st.button("✅ Ajouter"):
-        if nouveau_pays and nouvelle_agence:
-            try:
+    if action == "Ajouter":
+        st.subheader("➕ Ajouter une nouvelle agence")
+        nouveau_pays = st.text_input("Pays")
+        nouvelle_agence = st.text_input("Nom de l'agence")
+        
+        if st.button("✅ Ajouter"):
+            if nouveau_pays and nouvelle_agence:
+                try:
             # 🔍 Vérification des doublons
-                doublon = supabase.table("agences_livraison").select("pays", "agence")\
-                .eq("pays", nouveau_pays)\
-                .eq("agence", nouvelle_agence).execute().data
+                    doublon = supabase.table("agences_livraison").select("pays", "agence")\
+                    .eq("pays", nouveau_pays)\
+                    .eq("agence", nouvelle_agence).execute().data
 
-                if doublon:
-                    st.warning(f"⚠️ L'agence '{nouvelle_agence}' pour le pays '{nouveau_pays}' existe déjà.")
-                else:
+                    if doublon:
+                        st.warning(f"⚠️ L'agence '{nouvelle_agence}' pour le pays '{nouveau_pays}' existe déjà.")
+                    else:
                 # ✅ Ajout si pas de doublon
-                    supabase.table("agences_livraison").insert({
-                        "pays": nouveau_pays,
-                        "agence": nouvelle_agence
-                    }).execute()
-                    st.success(f"✅ Agence ajoutée pour {nouveau_pays}")
-                    st.rerun()
-            except Exception as e:
-                st.warning(f"⚠️ Erreur : {e}")
-        else:
-            st.warning("Veuillez renseigner tous les champs.")
+                        supabase.table("agences_livraison").insert({
+                            "pays": nouveau_pays,
+                            "agence": nouvelle_agence
+                        }).execute()
+                        st.success(f"✅ Agence ajoutée pour {nouveau_pays}")
+                        st.rerun()
+                except Exception as e:
+                    st.warning(f"⚠️ Erreur : {e}")
+            else:
+                st.warning("Veuillez renseigner tous les champs.")
 
     elif action == "Modifier":
         st.subheader("✏️ Modifier une agence existante")
