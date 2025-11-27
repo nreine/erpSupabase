@@ -1354,8 +1354,8 @@ elif menu == "⚙️ Gestion des agences":
                     }).execute()
                     st.success(f"✅ Agence ajoutée pour {nouveau_pays}")
                     st.rerun()
-                 except Exception as e:
-                    st.warning(f"⚠️ Erreur : {e}")
+            except Exception as e:
+                st.warning(f"⚠️ Erreur : {e}")
         else:
             st.warning("Veuillez renseigner tous les champs.")
 
