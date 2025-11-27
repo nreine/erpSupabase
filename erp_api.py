@@ -123,7 +123,7 @@ def enregistrer_lot():
                 st.rerun()
 
 
-st.markdown("<h1 style='text-align: center;'>Gestion des tâches manuelles section DCP</h1>", unsafe_allow_html=True)
+st.markdown("<h1 style='text-align: center;'>Gestion des activités de la section DCP</h1>", unsafe_allow_html=True)
 st.divider()
 # Menu latéral avec icône burger
 with st.sidebar:
