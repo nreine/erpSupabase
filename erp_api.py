@@ -1764,7 +1764,9 @@ elif menu == "🔐 Gestion des comptes utilisateurs":
                 existing = supabase.table("utilisateurs").select("identifiant").eq("identifiant", new_id).execute().data
                 if existing:
                     st.error("❌ Cet identifiant existe déjà.")
-                else:
+                else:                    
+                    last_id_data = supabase.table("utilisateurs").select("id").order("id", desc=True).limit(1).execute().data
+                    next_id = (last_id_data[0]["id"] + 1) if last_id_data else 1
                     supabase.table("utilisateurs").insert({
                         "identifiant": new_id,
                         "mot_de_passe": hashlib.sha256(new_pwd.encode()).hexdigest(),
