@@ -878,15 +878,16 @@ if menu == "🏠 Accueil":
                     text=[f"{jour}<br>{val} tests" for jour, val in zip(labels, z)],
                     line=dict(color='royalblue', width=4), marker=dict(size=6))
             ])
+                    
             fig.update_layout(
-                title="Total des tests journaliers par jour de la semaine (Courbe 3D)", 
-                scene=dict(
-                    xaxis=dict(title="Jour", tickvals=x, ticktext=labels),
-                    yaxis=dict(title=""),
-                    zaxis=dict(title="Nombre de tests")
-                ),
-                margin=dict(l=0, r=0, b=0, t=40),
-                scene_camera=dict(eye=dict(x=1.5, y=1.5, z=1.5))
+               title="📈 Total des tests journaliers suivant le jour de la semaine",
+               scene=dict(
+                  xaxis=dict(title="Jour", tickvals=x, ticktext=labels),
+                  yaxis=dict(title=""),
+                  zaxis=dict(title="Nombre de tests")
+               ),
+               margin=dict(l=0, r=0, b=0, t=40),
+               scene_camera=dict(eye=dict(x=1.5, y=1.5, z=1.5))
             )
             st.plotly_chart(fig, use_container_width=True)
         
