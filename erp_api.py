@@ -2018,8 +2018,11 @@ elif menu == "🔐 Gestion des comptes utilisateurs":
 
 
 # Message de bienvenue et déconnexion
-st.sidebar.success(f"{st.session_state['utilisateur']} est connecté")
+st.sidebar.success(
+    f"👤 {st.session_state.get('display_name', 'Utilisateur')} est connecté"
+)
+# --- Ici commencent tes modules une fois l'utilisateur authentifié ---
+#st.sidebar.success(f"👤 {st.session_state.get('display_name', 'Utilisateur')} ({st.session_state.get('role','?')})")
 if st.sidebar.button("🔓 Se déconnecter"):
-    for key in ["utilisateur", "role", "doit_changer_mdp"]:
-        st.session_state.pop(key, None)
+    logout()
     st.rerun()
