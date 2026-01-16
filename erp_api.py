@@ -22,6 +22,7 @@ st.set_page_config(
 
 # Connexion à Supabase
 url = st.secrets["supabase_url"]
+anon_key = st.secrets["supabase_anon_key"]
 key = st.secrets["supabase_key"]
 supabase = create_client(url, key)
 JWT_SECRET = st.secrets["SUPABASE_JWT_SECRET"]
