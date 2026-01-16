@@ -1,6 +1,8 @@
 import math
 import streamlit as st
 from supabase import create_client
+import jwt  # pyjwt
+import time
 import pandas as pd
 from datetime import date
 import hashlib
@@ -9,7 +11,9 @@ import numpy as np
 import plotly.graph_objects as go
 import plotly.express as px
 from sklearn.linear_model import LinearRegression
-
+import streamlit as st
+import streamlit.components.v1 as components
+from numpy.random import default_rng as rng
 
 st.set_page_config(
     page_title="DSTM",
@@ -18,69 +22,162 @@ st.set_page_config(
 
 # Connexion à Supabase
 url = st.secrets["supabase_url"]
+anon_key = st.secrets["supabase_anon_key"]
 key = st.secrets["supabase_key"]
 supabase = create_client(url, key)
+JWT_SECRET = st.secrets["SUPABASE_JWT_SECRET"]
+JWT_ALG = "HS256"
+
 
 # Fonction de hachage du mot de passe
 def hash_password(password):
     return hashlib.sha256(password.encode()).hexdigest()
 
-# Fonction de connexion utilisateur
-def login_form():
-    st.markdown("<h2 style='text-align: center;'> Connexion à l'application DSTM</h2>", unsafe_allow_html=True)
+# --- Utilitaires ---
+def sha256_hex(text: str) -> str:
+    return hashlib.sha256(text.encode("utf-8")).hexdigest()
+
+def make_supabase_compatible_jwt(user_id: str, ttl_seconds: int = 7200) -> str:
+    now = int(time.time())
+    payload = {
+        "sub": user_id,           # 🔑 auth.uid() = sub
+        "role": "authenticated",  # 🔐 rôle PostgREST
+        "iat": now,
+        "exp": now + ttl_seconds,
+    }
+    token = jwt.encode(payload, JWT_SECRET, algorithm=JWT_ALG)
+    return token if isinstance(token, str) else token.decode("utf-8")
+
+
+# Stocker le client dans la session pour pouvoir le recréer au besoin
+if "supabase_client" not in st.session_state:
+    st.session_state["supabase_client"] = create_client(url, anon_key)
+supabase = st.session_state["supabase_client"]
+
+def set_bearer(token: str):
+    """Attache le Bearer JWT au client PostgREST (RLS)."""
+    # Méthode officielle (v2.x)
+    supabase.postgrest.auth(token)
+
+def clear_bearer():
+    """Retire le Bearer JWT du client PostgREST (RLS)."""
+    try:
+        # Méthode officielle (v2.x)
+        supabase.postgrest.auth(None)
+    except Exception:
+        # Fallback universel : recréer un client propre sans Authorization
+        st.session_state["supabase_client"] = create_client(url, anon_key)
+
+
+def logout():
+    clear_bearer()
+    for k in ["user_id", "role", "display_name", "bearer_token", "doit_changer_mdp"]:
+        st.session_state.pop(k, None)
+
+# --- Auth fusionnée SHA + JWT ---
+def authenticate_user(identifiant: str, password_plain: str) -> bool:
+    """1) Vérifie SHA-256 via RPC, 2) Génère JWT, 3) Stocke session."""
+    pass_hash = sha256_hex(password_plain)
+    try:
+        res = supabase.rpc("login_utilisateur", {"ident": identifiant, "pass_hash": pass_hash}).execute()
+        rows = res.data or []
+        if not rows:
+            st.error("❌ Identifiant ou mot de passe incorrect.")
+            return False
+
+        user = rows[0]
+        user_id = user["user_id"]
+        role = user.get("role", "operateur")
+        display_name = user.get("display_name", identifiant)
+        doit_changer_mdp = bool(user.get("doit_changer_mdp", False))
+
+        # 🔐 JWT pour RLS
+        token = make_supabase_compatible_jwt(user_id)
+        set_bearer(token)
+
+        # ✅ Session unique
+        st.session_state["user_id"] = user_id
+        st.session_state["role"] = role
+        st.session_state["display_name"] = display_name
+        st.session_state["bearer_token"] = token
+        st.session_state["doit_changer_mdp"] = doit_changer_mdp
+
+        return True
+    except Exception as e:
+        st.error(f"Erreur lors du login : {e}")
+        return False
+
+# --- Page de connexion (formulaire unique, AVANT main) ---
+def show_login_form() -> bool:
+    st.markdown("<h2 style='text-align: center;'> 🔐 Connexion à l'application DSTM</h2>", unsafe_allow_html=True)
     st.markdown("<div style='text-align: center;'>Veuillez entrer vos identifiants pour accéder à l'application.</div>", unsafe_allow_html=True)
     st.divider()
-    with st.form("login_form"):
-        st.image("imageExcelis.png", width=200)
+    with st.container(border=True):
+        st.image("C:/Users/USER/Desktop/Images/imageExcelis.png", width=200)
         st.markdown("<h6 style='text-align: center; color: grey;'><em>Département Cartes et Partenariat DCP</em></h6>", unsafe_allow_html=True)
         st.markdown("<div style='display: flex; justify-content: center;'>", unsafe_allow_html=True)
         col1, col2 = st.columns([1, 2])
         with col2:
-            identifiant = st.text_input("Identifiant")
-            mot_de_passe = st.text_input("Mot de passe", type="password")
-            submit = st.form_submit_button("✅ Se connecter")
+            ident = st.text_input("Identifiant", key="login_ident")
+            pwd = st.text_input("Mot de passe", type="password", key="login_pwd")
+            if st.button("✅ Se connecter", type="secondary"):
+                if authenticate_user(ident, pwd):
+                    st.success("✅ Connexion réussie")
+                    st.rerun()
+                return False
         st.markdown("</div>", unsafe_allow_html=True)
 
-    if submit:
-        result = supabase.table("utilisateurs").select("mot_de_passe, role, doit_changer_mdp").eq("identifiant", identifiant).execute().data
-        if result and result[0]["mot_de_passe"] == hash_password(mot_de_passe):
-            st.session_state["utilisateur"] = identifiant
-            st.session_state["role"] = result[0]["role"]
-            st.session_state["doit_changer_mdp"] = result[0]["doit_changer_mdp"]
-            st.success("✅ Connexion réussie")
-            st.rerun()
-        else:
-            st.error("❌ Identifiants incorrects")
+# --- Page de changement de mot de passe (première session) ---
+def show_change_password():
+    st.warning("🔄 Vous devez changer votre mot de passe avant d'accéder aux modules.")
+    new_pwd = st.text_input("Nouveau mot de passe", type="password", key="new_pwd")
+    confirm = st.text_input("Confirmer le mot de passe", type="password", key="confirm_pwd")
+    if st.button("✅ Mettre à jour"):
+        if not new_pwd:
+            st.error("Le mot de passe ne peut pas être vide."); return
+        if new_pwd != confirm:
+            st.error("Les mots de passe ne correspondent pas."); return
+        try:
+            supabase.table("utilisateurs").update({
+                "mot_de_passe": sha256_hex(new_pwd),
+                "doit_changer_mdp": False
+            }).eq("user_id", st.session_state["user_id"]).execute()
+            st.success("✅ Mot de passe mis à jour. Bienvenue !")
+            st.session_state["doit_changer_mdp"] = False
+        except Exception as e:
+            st.error(f"Erreur de mise à jour : {e}")
 
-# Blocage de l'accès si non connecté
-if "utilisateur" not in st.session_state:
-    login_form()
-    st.stop()
+# --- ✅ PORTE D'AUTH HORS MAIN (toujours exécutée AVANT tout) ---
+def ensure_authenticated():
+    """
+    Affiche le login tant que l'utilisateur n'est pas authentifié.
+    Après login, si 'doit_changer_mdp' est vrai, force la page de changement de mot de passe.
+    """
+    if "bearer_token" not in st.session_state or "user_id" not in st.session_state:
+        ok = show_login_form()
+        if not ok:
+            # Tant que non authentifié, on arrête l'app ici (pas de menu ni modules)
+            st.stop()
+        return
 
-# Blocage si mot de passe doit être changé
-if "doit_changer_mdp" in st.session_state and st.session_state["doit_changer_mdp"]:
-    def changer_mot_de_passe():
-        st.warning("🔄 Vous devez changer votre mot de passe.")
-        nouveau_mdp = st.text_input("Nouveau mot de passe", type="password")
-        confirmer_mdp = st.text_input("Confirmer le mot de passe", type="password")
-        if st.button("✅ Mettre à jour"):
-            if nouveau_mdp == confirmer_mdp and nouveau_mdp != "":
-                supabase.table("utilisateurs").update({
-                    "mot_de_passe": hash_password(nouveau_mdp),
-                    "doit_changer_mdp": False
-                }).eq("identifiant", st.session_state["utilisateur"]).execute()
-                st.success("🔐 Mot de passe mis à jour avec succès.")
-                st.session_state["doit_changer_mdp"] = False
-                st.rerun()
-            else:
-                st.error("❌ Les mots de passe ne correspondent pas ou sont vides.")
-    changer_mot_de_passe()
-    st.stop()
+    # Auth OK mais premier login → changer le mot de passe avant l'accès aux modules
+    if st.session_state.get("doit_changer_mdp", False):
+        show_change_password()
+        st.stop()
+
+# --- 🚪 APPEL HORS MAIN : PORTE D'AUTH TOUJOURS EN PREMIER ---
+ensure_authenticated()
+
+if "lot_action" not in st.session_state:
+    st.session_state["lot_action"] = None  # add | edit | delete
+if "lot_id" not in st.session_state:
+    st.session_state["lot_id"] = None
+
 
 # Exemple d'enregistrement d'un lot
 def enregistrer_lot():
     st.markdown("## ➕ Enregistrement d'un nouveau lot")
-    st.markdown("<div style='text-align: center; color: grey;'>Renseigner le formulaire </div>", unsafe_allow_html=True)
+    st.divider()
     with st.form("form_enregistrement"):
         col1, col2 = st.columns(2)
         with col1:
@@ -96,6 +193,7 @@ def enregistrer_lot():
 
         cartes_a_tester = int(quantite / 50) + (quantite % 50 > 0)
         submitted = st.form_submit_button("✅ Enregistrer le lot")
+        
 
         if submitted:
             existing = supabase.table("lots").select("id").eq("nom_lot", nom_lot).execute().data
@@ -106,7 +204,7 @@ def enregistrer_lot():
 # Récupérer le dernier ID
                 last_id_data = supabase.table("lots").select("id").order("id", desc=True).limit(1).execute().data
                 next_id = (last_id_data[0]["id"] + 1) if last_id_data else 1
-
+                   
                 supabase.table("lots").insert({
                     "id": next_id,
                     "nom_lot": nom_lot,
@@ -117,18 +215,14 @@ def enregistrer_lot():
                     "filiale": filiale,
                     "impression_pin": impression_pin,
                     "nombre_pin": nombre_pin,
-                    "cartes_a_tester": cartes_a_tester
+                    "cartes_a_tester": cartes_a_tester, 
                 }).execute()
                 st.success("✅ Lot enregistré avec succès.")
                 st.rerun()
 
-
-st.markdown("<h1 style='text-align: center;'>Gestion des activités de la section DCP</h1>", unsafe_allow_html=True)
-st.divider()
-# Menu latéral avec icône burger
-with st.sidebar:
-    st.image("imageExcelis.png", width=200)
-    st.markdown("<h6 style='text-align: center; color: grey;'><em>Département Cartes et Partenariat DCP</em></h6>", unsafe_allow_html=True)
+# Affichage du menu
+st.sidebar.image("C:/Users/USER/Desktop/Images/imageExcelis.png")
+st.markdown("<h1 style='text-align: center;'>ERP Lots - Supabase</h1>", unsafe_allow_html=True)
     
     menu = st.selectbox("Naviguer vers :", [
         "🏠 Accueil",
