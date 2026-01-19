@@ -3034,7 +3034,7 @@ elif menu == "🔐 Gestion des comptes utilisateurs":
                                             st.error("❌ Cet identifiant est déjà pris par un autre compte.")
                                             st.stop()
 
-                                 update_payload = {
+                                update_payload = {
                                     "identifiant": upd_identifiant,
                                     "role": upd_role,
                                     "actif": bool(upd_actif),
