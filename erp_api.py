@@ -2808,95 +2808,355 @@ elif menu == "🔐 Gestion des comptes utilisateurs":
         st.error("⛔ Accès réservé aux administrateurs.")
         st.stop()
 
-    onglet = st.radio("📌 Choisissez une action :", [
-        "➕ Ajouter un utilisateur",
-        "✏️ Modifier un utilisateur",
-        "🔄 Activer/Désactiver un compte",
-        "🗑️ Supprimer un utilisateur"
-    ])
+    # ==============================
+    # 1) Lecture des données
+    # ==============================
+    try:
+        users_raw = supabase.table("utilisateurs").select("*").execute().data or []
+    except Exception as e:
+        st.error(f"Erreur de lecture : {e}")
+        users_raw = []
 
-    # ➕ Ajouter un utilisateur
-    if onglet == "➕ Ajouter un utilisateur":
-        st.markdown("### ➕ Ajouter un nouvel utilisateur")
-        with st.form("form_ajout_utilisateur"):
-            col1, col2 = st.columns(2)
-            with col1:
-                new_id = st.text_input("👤 Identifiant")
-                new_role = st.selectbox("🎯 Rôle", ["admin", "operateur"])
-            with col2:
-                new_pwd = st.text_input("🔑 Mot de passe", type="password")
-            submit = st.form_submit_button("✅ Créer le compte")
-            if submit and new_id and new_pwd:
-                existing = supabase.table("utilisateurs").select("identifiant").eq("identifiant", new_id).execute().data
-                if existing:
-                    st.error("❌ Cet identifiant existe déjà.")
-                else:                    
-                    last_id_data = supabase.table("utilisateurs").select("id").order("id", desc=True).limit(1).execute().data
-                    next_id = (last_id_data[0]["id"] + 1) if last_id_data else 1
-                    supabase.table("utilisateurs").insert({
-                        "identifiant": new_id,
-                        "mot_de_passe": hashlib.sha256(new_pwd.encode()).hexdigest(),
-                        "role": new_role,
-                        "doit_changer_mdp": 1,
-                        "actif": 1
-                    }).execute()
-                    st.success("✅ Utilisateur ajouté avec succès.")
-                    st.rerun()
+    import pandas as pd
+    df_users = pd.DataFrame(users_raw)
 
-    # ✏️ Modifier un utilisateur
-    
-    elif onglet == "✏️ Modifier un utilisateur":
-        st.markdown("### ✏️ Modifier l'identifiant ou le rôle d'un utilisateur")
-        users = supabase.table("utilisateurs").select("identifiant", "role").execute().data
-        user_list = [u["identifiant"] for u in users]
-        selected_user = st.selectbox("👤 Choisir un utilisateur", user_list)
+    # Colonnes attendues (on crée si absentes pour éviter les KeyError)
+    for col, default in [
+        ("id", None),
+        ("identifiant", ""),
+        ("email", ""),
+        ("role", ""),
+        ("actif", False),
+        ("doit_changer_mdp", False),
+    ]:
+        if col not in df_users.columns:
+            df_users[col] = default
 
-        with st.form("form_modif_utilisateur_simple"):
-            col1, col2 = st.columns(2)
-            with col1:
-                new_identifiant = st.text_input("🆕 Nouvel identifiant", value=selected_user)
-            with col2:
-                new_role = st.selectbox("🎯 Nouveau rôle", ["admin", "operateur"])
-            submit = st.form_submit_button("✅ Mettre à jour")
+    # ==============================
+    # 2) Filtres latéraux
+    # ==============================
+    st.sidebar.header("🔎 Filtres (Utilisateurs)")
+    roles = sorted([r for r in df_users["role"].dropna().unique().tolist() if r != ""])
+    if not roles:
+        roles = ["admin", "operateur"]
 
-            if submit and new_identifiant:
-                if new_identifiant != selected_user:
-                    exists = supabase.table("utilisateurs").select("identifiant").eq("identifiant", new_identifiant).execute().data
-                    if exists:
-                        st.error("❌ Ce nouvel identifiant est déjà utilisé.")
-                        st.stop()
-                supabase.table("utilisateurs").update({
-                    "identifiant": new_identifiant,
-                    "role": new_role
-                }).eq("identifiant", selected_user).execute()
-                st.success("✅ Utilisateur mis à jour avec succès.")
-                st.rerun()
+    role_sel = st.sidebar.multiselect("🎯 Rôle", roles, default=roles)
+    statut_sel = st.sidebar.multiselect("🔌 Statut", ["Actif", "Inactif"], default=["Actif", "Inactif"])
+    q = st.sidebar.text_input("🔤 Recherche (identifiant/email)", "")
+
+    df_filtered = df_users.copy()
+    if role_sel:
+        df_filtered = df_filtered[df_filtered["role"].isin(role_sel)]
+    if statut_sel:
+        masks = []
+        if "Actif" in statut_sel:
+            masks.append(df_filtered["actif"] == True)
+        if "Inactif" in statut_sel:
+            masks.append(df_filtered["actif"] == False)
+        if masks:
+            m = masks[0]
+            for mi in masks[1:]:
+                m = m | mi
+            df_filtered = df_filtered[m]
+    if q.strip():
+        s = q.lower()
+        df_filtered = df_filtered[
+            df_filtered["identifiant"].astype(str).str.lower().str.contains(s)
+            | df_filtered["email"].astype(str).str.lower().str.contains(s)
+        ]
+
+    # ==============================
+    # 3) Indicateurs (KPIs) + aperçu
+    # ==============================
+    with st.container(border=True):
+        
+        total = len(df_filtered)
+        actifs = int((df_filtered["actif"] == True).sum())
+        inactifs = total - actifs
+        admins = int((df_filtered["role"] == "admin").sum())
+        operateurs = int((df_filtered["role"] == "operateur").sum())
+        
+        colE, colF = st.columns(2)
+        with colE:
+            colE.metric("👥 Utilisateurs", total, total, border=True)
+            colE.metric("✅ Compte actif", actifs, actifs, border=True)
+        with colF:
+            colF.metric("⛔ Compte inactif", inactifs, inactifs, border=True)
+            colF.metric("🔐 Répartition des comptes", f"admin:{admins}", f"operateur:{operateurs}", border=True)
 
 
-    # 🔄 Activer/Désactiver un compte
-    elif onglet == "🔄 Activer/Désactiver un compte":
-        st.markdown("### 🔄 Activer ou désactiver un compte")
-        users = supabase.table("utilisateurs").select("identifiant, actif").execute().data
-        for user in users:
-            col1, col2 = st.columns([3, 1])
-            with col1:
-                st.write(f"👤 {user['identifiant']} — {'✅ Actif' if user['actif'] else '⛔ Inactif'}")
-            with col2:
-                if st.button("🔁 Basculer", key=user["identifiant"]):
-                    nouveau_statut = 0 if user["actif"] else 1
-                    supabase.table("utilisateurs").update({"actif": nouveau_statut}).eq("identifiant", user["identifiant"]).execute()
-                    st.rerun()
+    # Tableau
+    colonnes = [c for c in ["id", "identifiant", "email", "role", "actif", "doit_changer_mdp"] if c in df_filtered.columns]
+    st.dataframe(df_filtered[colonnes], use_container_width=True)
 
-    # 🗑️ Supprimer un utilisateur
-    elif onglet == "🗑️ Supprimer un utilisateur":
-        st.markdown("### 🗑️ Supprimer un utilisateur")
-        users = supabase.table("utilisateurs").select("identifiant").neq("identifiant", "admin").execute().data
-        user_list = [u["identifiant"] for u in users]
-        selected_user = st.selectbox("👤 Utilisateur à supprimer", user_list)
-        if st.button("🗑️ Supprimer"):
-            supabase.table("utilisateurs").delete().eq("identifiant", selected_user).execute()
-            st.success("✅ Utilisateur supprimé.")
+    st.divider()
+
+    # ==============================
+    # 4) État persistant pour actions
+    # ==============================
+    if "user_action" not in st.session_state:
+        st.session_state["user_action"] = None  # "add" | "edit" | "toggle" | "delete"
+    if "user_target" not in st.session_state:
+        st.session_state["user_target"] = None  # id ou identifiant selon schéma
+
+    has_id_pk = "id" in df_users.columns and df_users["id"].notna().any()
+
+    # ==============================
+    # 5) Barre d'actions
+    # ==============================
+    with st.container(border=True):
+        st.markdown("### 🛠️ Exécuter une action")
+        Ajouter, Modifier, Activer, Supprimer = st.columns(4)
+
+        if Ajouter.button("Ajouter", use_container_width=True):
+            st.session_state["user_action"] = "add"
+            st.session_state["user_target"] = None
             st.rerun()
+
+        if Modifier.button("Modifier", use_container_width=True):
+            st.session_state["user_action"] = "edit"
+            st.session_state["user_target"] = None
+            st.rerun()
+
+        if Activer.button("Activer/Désactiver", use_container_width=True):
+            st.session_state["user_action"] = "toggle"
+            st.session_state["user_target"] = None
+            st.rerun()
+
+        if Supprimer.button("Supprimer", use_container_width=True):
+            st.session_state["user_action"] = "delete"
+            st.session_state["user_target"] = None
+            st.rerun()
+
+    # ==============================
+    # 6) PANNEAU : AJOUTER
+    # ==============================
+    import hashlib
+
+    if st.session_state["user_action"] == "add":
+        st.markdown("#### ➕ Ajouter un utilisateur")
+        with st.form("form_add_user"):
+            col1, col2 = st.columns(2)
+            with col1:
+                new_identifiant = st.text_input("👤 Identifiant")
+                # Si la colonne email existe dans la table, on propose le champ
+                ask_email = "email" in df_users.columns
+                new_email = st.text_input("✉️ Email") if ask_email else None
+            with col2:
+                new_role = st.selectbox("🎯 Rôle", ["admin", "operateur"])
+                new_pwd = st.text_input("🔑 Mot de passe", type="password")
+
+            submit_add = st.form_submit_button("✅ Créer")
+            if submit_add:
+                if not new_identifiant or not new_pwd:
+                    st.warning("Veuillez renseigner au minimum l'identifiant et le mot de passe.")
+                else:
+                    # Vérification doublon d'identifiant
+                    try:
+                        exists = supabase.table("utilisateurs").select("identifiant").eq("identifiant", new_identifiant).execute().data
+                        if exists:
+                            st.error("❌ Cet identifiant est déjà utilisé.")
+                        else:
+                            payload = {
+                                "identifiant": new_identifiant,
+                                "mot_de_passe": hashlib.sha256(new_pwd.encode("utf-8")).hexdigest(),
+                                "role": new_role,
+                                "doit_changer_mdp": True,
+                                "actif": True
+                            }
+                            if new_email is not None:
+                                payload["email"] = new_email
+
+                            supabase.table("utilisateurs").insert(payload).execute()
+                            st.success("✅ Utilisateur créé.")
+                            st.session_state["user_action"] = None
+                            st.rerun()
+                    except Exception as e:
+                        st.error(f"Erreur lors de l'ajout : {e}")
+
+        st.button("❌ Fermer", on_click=lambda: st.session_state.update({"user_action": None}))
+
+    # ==============================
+    # 7) PANNEAU : MODIFIER
+    # ==============================
+    elif st.session_state["user_action"] == "edit":
+        st.markdown("#### ✏️ Modifier un utilisateur")
+        if df_users.empty:
+            st.info("Aucun utilisateur à modifier.")
+            st.button("❌ Fermer", on_click=lambda: st.session_state.update({"user_action": None}))
+        else:
+            # Options (id si dispo, sinon identifiant)
+            options = []
+            for _, row in df_users.iterrows():
+                label = f"{row.get('identifiant','')} — {row.get('role','')} — {'Actif' if row.get('actif') else 'Inactif'}"
+                key = int(row["id"]) if has_id_pk and pd.notna(row["id"]) else str(row["identifiant"])
+                options.append((key, label))
+
+            sel = st.selectbox("Sélectionner un utilisateur", options, format_func=lambda x: x[1], key="select_user_edit")
+            st.session_state["user_target"] = sel[0]
+
+            # Charger le record choisi
+            if has_id_pk and isinstance(st.session_state["user_target"], int):
+                record = next((u for u in users_raw if u.get("id") == st.session_state["user_target"]), None)
+            else:
+                record = next((u for u in users_raw if u.get("identifiant") == st.session_state["user_target"]), None)
+
+            if record is None:
+                st.warning("Impossible de charger l'utilisateur sélectionné.")
+                st.button("❌ Fermer", on_click=lambda: st.session_state.update({"user_action": None, "user_target": None}))
+            else:
+                with st.form("form_edit_user"):
+                    col1, col2 = st.columns(2)
+                    with col1:
+                        upd_identifiant = st.text_input("👤 Identifiant", value=record.get("identifiant", ""))
+                        upd_email = st.text_input("✉️ Email", value=record.get("email", "")) if "email" in df_users.columns else None
+                        reset_pwd = st.checkbox("🔐 Réinitialiser le mot de passe")
+                        new_pwd = st.text_input("Nouveau mot de passe", type="password") if reset_pwd else None
+                    with col2:
+                        upd_role = st.selectbox("🎯 Rôle", ["admin", "operateur"], index=["admin","operateur"].index(record.get("role","operateur")) if record.get("role") in ["admin","operateur"] else 1)
+                        upd_chg = st.checkbox("🔄 Imposer le changement de mot de passe", value=bool(record.get("doit_changer_mdp", False)))
+                        upd_actif = st.checkbox("🔌 Compte actif", value=bool(record.get("actif", True)))
+
+                    submit_upd = st.form_submit_button("✅ Mettre à jour")
+                    if submit_upd:
+                        try:
+                            # Unicité de l'identifiant si changé
+                            if upd_identifiant != record.get("identifiant"):
+                                dup = supabase.table("utilisateurs").select("id, identifiant").eq("identifiant", upd_identifiant).execute().data or []
+                                if has_id_pk:
+                                    # conflit si un autre id que le courant
+                                    dup_ids = {d.get("id") for d in dup}
+                                    if record.get("id") not in dup_ids and dup_ids:
+                                        st.error("❌ Cet identifiant est déjà pris par un autre compte.")
+                                        st.stop()
+                                else:
+                                    if dup:
+                                        st.error("❌ Cet identifiant est déjà pris par un autre compte.")
+                                        st.stop()
+
+                            update_payload = {
+                                "identifiant": upd_identifiant,
+                                "role": upd_role,
+                                "actif": bool(upd_actif),
+                                "doit_changer_mdp": bool(upd_chg),
+                            }
+                            if "email" in df_users.columns:
+                                update_payload["email"] = upd_email or ""
+
+                            if reset_pwd:
+                                if not new_pwd:
+                                    st.error("Veuillez saisir le nouveau mot de passe.")
+                                    st.stop()
+                                update_payload["mot_de_passe"] = hashlib.sha256(new_pwd.encode("utf-8")).hexdigest()
+
+                            q = supabase.table("utilisateurs").update(update_payload)
+                            if has_id_pk and isinstance(record.get("id"), (int, float)):
+                                q = q.eq("id", int(record["id"]))
+                            else:
+                                q = q.eq("identifiant", record.get("identifiant"))
+                            q.execute()
+
+                            st.success("✅ Utilisateur mis à jour.")
+                            st.session_state["user_action"] = None
+                            st.session_state["user_target"] = None
+                            st.rerun()
+                        except Exception as e:
+                            st.error(f"Erreur lors de la mise à jour : {e}")
+
+                st.button("❌ Fermer", on_click=lambda: st.session_state.update({"user_action": None, "user_target": None}))
+
+    # ==============================
+    # 8) PANNEAU : ACTIVER / DÉSACTIVER
+    # ==============================
+    elif st.session_state["user_action"] == "toggle":
+        st.markdown("#### 🔁 Activer / Désactiver un compte")
+        if df_users.empty:
+            st.info("Aucun utilisateur.")
+            st.button("❌ Fermer", on_click=lambda: st.session_state.update({"user_action": None}))
+        else:
+            # Options (id si dispo, sinon identifiant)
+            options = []
+            for _, row in df_users.iterrows():
+                label = f"{row.get('identifiant','')} — {'✅ Actif' if row.get('actif') else '⛔ Inactif'}"
+                key = int(row["id"]) if has_id_pk and pd.notna(row["id"]) else str(row["identifiant"])
+                options.append((key, label))
+
+            sel = st.selectbox("Sélectionner un utilisateur", options, format_func=lambda x: x[1], key="select_user_toggle")
+            st.session_state["user_target"] = sel[0]
+
+            # Charger record
+            if has_id_pk and isinstance(st.session_state["user_target"], int):
+                record = next((u for u in users_raw if u.get("id") == st.session_state["user_target"]), None)
+            else:
+                record = next((u for u in users_raw if u.get("identifiant") == st.session_state["user_target"]), None)
+
+            if record is None:
+                st.warning("Impossible de charger l'utilisateur sélectionné.")
+                st.button("❌ Fermer", on_click=lambda: st.session_state.update({"user_action": None, "user_target": None}))
+            else:
+                new_state = not bool(record.get("actif", True))
+                if st.button(f"🔁 Basculer en {'Actif' if new_state else 'Inactif'}", type="secondary"):
+                    try:
+                        q = supabase.table("utilisateurs").update({"actif": new_state})
+                        if has_id_pk and isinstance(record.get("id"), (int, float)):
+                            q = q.eq("id", int(record["id"]))
+                        else:
+                            q = q.eq("identifiant", record.get("identifiant"))
+                        q.execute()
+                        st.success("✅ Statut mis à jour.")
+                        st.session_state["user_action"] = None
+                        st.session_state["user_target"] = None
+                        st.rerun()
+                    except Exception as e:
+                        st.error(f"Erreur lors de la bascule : {e}")
+
+                st.button("❌ Fermer", on_click=lambda: st.session_state.update({"user_action": None, "user_target": None}))
+
+    # ==============================
+    # 9) PANNEAU : SUPPRIMER
+    # ==============================
+    elif st.session_state["user_action"] == "delete":
+        st.markdown("#### 🗑️ Supprimer un utilisateur")
+        if df_users.empty:
+            st.info("Aucun utilisateur à supprimer.")
+            st.button("❌ Fermer", on_click=lambda: st.session_state.update({"user_action": None}))
+        else:
+            # On évite de supprimer le compte 'admin' root si présent
+            users_del = [u for u in users_raw if str(u.get("identifiant","")).lower() != "admin"]
+
+            if not users_del:
+                st.info("Aucun utilisateur supprimable (le seul compte est 'admin').")
+                st.button("❌ Fermer", on_click=lambda: st.session_state.update({"user_action": None}))
+            else:
+                options = []
+                for u in users_del:
+                    label = f"{u.get('identifiant','')} — {u.get('role','')} — {'Actif' if u.get('actif') else 'Inactif'}"
+                    key = int(u["id"]) if has_id_pk and u.get("id") is not None else str(u.get("identifiant"))
+                    options.append((key, label))
+
+                sel = st.selectbox("Sélectionner un utilisateur à supprimer", options, format_func=lambda x: x[1], key="select_user_delete")
+                st.session_state["user_target"] = sel[0]
+
+                colA, colB = st.columns(2)
+                    
+                with colA:
+                    confirm = st.checkbox("Je confirme la suppression")
+                    if st.button("🗑️ Supprimer", type="primary", use_container_width=True, disabled=not confirm):
+                        try:
+                            q = supabase.table("utilisateurs").delete()
+                            if has_id_pk and isinstance(st.session_state["user_target"], int):
+                                q = q.eq("id", int(st.session_state["user_target"]))
+                            else:
+                                q = q.eq("identifiant", str(st.session_state["user_target"]))
+                            q.execute()
+                            st.warning("🗑️ Utilisateur supprimé.")
+                            st.session_state["user_action"] = None
+                            st.session_state["user_target"] = None
+                            st.rerun()
+                        except Exception as e:
+                            st.error(f"Erreur lors de la suppression : {e}")
+
+                st.button("❌ Fermer", on_click=lambda: st.session_state.update({"user_action": None, "user_target": None}))
 
 
 # Message de bienvenue et déconnexion
