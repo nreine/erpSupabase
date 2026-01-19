@@ -2540,6 +2540,7 @@ elif menu == "📇 Annuaire des livreurs":
 
 elif menu == "📦 Visualisation des expéditions":
     st.markdown("## 📦 Visualisation des expéditions")
+    st.divider()
 
     # 🔍 Récupération des expéditions
     try:
@@ -2555,23 +2556,23 @@ elif menu == "📦 Visualisation des expéditions":
         en_attente = df[df["statut"] == "En attente"].shape[0]
         en_cours = df[df["statut"] == "En cours d'expédition"].shape[0]
         expediees = df[df["statut"] == "Expédié"].shape[0]
-
-        col1, col2, col3 = st.columns(3)
-        col1.metric("🕒 En attente", en_attente)
-        col2.metric("🚚 En cours", en_cours)
-        col3.metric("✅ Expédiées", expediees)
+        
+        with st.container(border=True):
+            st.subheader("Indicateurs des expéditions")
+            col1, col2, col3 = st.columns(3)
+            col1.metric("🕒 En attente", en_attente, f"{en_attente} expédition en attente", border=True)
+            col2.metric("🚚 En cours", en_cours, f"{en_cours} expédition en cours", border=True)
+            col3.metric("✅ Expédiées", expediees, f"{expediees} expédition réalisée", border=True)
 
         st.divider()
-        st.subheader("🏢 Répartition par agence de livraison")
+        with st.container(border=True):
+            st.subheader("Répartition des livraisons par agence")
+            agence_counts = df["agence"].value_counts().reset_index()
+            agence_counts.columns = ["Agence", "Nombre"]
+            cols = st.columns(len(agence_counts), border=True)
+            for i, row in agence_counts.iterrows():
+                cols[i].metric(f"🏢 {row['Agence']}", row["Nombre"], f"{row["Nombre"]} livraisons éffectuées")
 
-        agence_counts = df["agence"].value_counts().reset_index()
-        agence_counts.columns = ["Agence", "Nombre"]
-        cols = st.columns(len(agence_counts))
-        for i, row in agence_counts.iterrows():
-            cols[i].metric(f"🏢 {row['Agence']}", row["Nombre"])
-
-    st.divider()
-    st.markdown("## 📋 Inventaire des expéditions enregistrées")
 
     try:
         expeditions = supabase.table("expedition").select("*").execute().data
@@ -2587,7 +2588,9 @@ elif menu == "📦 Visualisation des expéditions":
 
         df_expeditions = pd.DataFrame(expeditions)
 
-    # 📊 Filtres latéraux
+        
+        
+# 📊 Filtres latéraux
         st.sidebar.header("🔍 Filtres Inventaire des expéditions")
 
 # Pays destinataire
@@ -2642,6 +2645,7 @@ elif menu == "📦 Visualisation des expéditions":
         (df_expeditions["agent_livreur"].isin(agent_selection)) &
         (df_expeditions["bordereau"].isin(bordereau_selection))
         ]
+
     except Exception as e:
         st.error(f"Erreur lors de la récupération des données d'expédition : {e}")
         df_expeditions = pd.DataFrame()
@@ -2651,45 +2655,148 @@ elif menu == "📦 Visualisation des expéditions":
     else:
         st.dataframe(df_filtered, use_container_width=True)
 
-        st.subheader("🛠️ Gestion des expéditions")
-        for index, row in df_filtered.iterrows():
-            col1, col2, col3 = st.columns([4, 1, 1])
-            with col1:
-                st.write(
-                    f"📦 **{row['nom_lot']}** | {row['pays']} | {row['statut']} | {row['bordereau']} | "
-                    f"{row['agence']} | {row['agent_livreur']} | {row['date_expedition']}"
-                )
-            with col2:
-                if st.button("✏️ Modifier", key=f"mod_{index}"):
-                    st.session_state["mod_expedition_id"] = row["id"]
-                    st.rerun()
 
-            if st.session_state.get("mod_expedition_id") == row["id"]:
-                with st.form(f"form_mod_expedition_{index}"):
-                    new_statut = st.selectbox(
-                        "Nouveau statut",
-                        ["En attente", "En cours d'expédition", "Expédié"],
-                        index=["En attente", "En cours d'expédition", "Expédié"].index(row["statut"])
-                    )
-                    submitted = st.form_submit_button("✅ Enregistrer les modifications")
-                    if submitted:
+# =========================
+# 🛠️ Gestion des expéditions
+# =========================
+        st.divider()
+# État local de navigation pour actions expéditions
+        if "exp_action" not in st.session_state:
+            st.session_state["exp_action"] = None   # "add" | "edit" | "delete"
+        if "exp_id" not in st.session_state:
+            st.session_state["exp_id"] = None
+
+        with st.container(border=True):
+            st.markdown("### 🛠️ Effectuer une action sur les expéditions")
+            Modifier, Supprimer = st.columns(2)
+
+
+    # ---------------------- ✏️ MODIFIER ----------------------
+            if Modifier.button("Modifier une expédition", use_container_width=True):
+                st.session_state["exp_action"] = "edit"
+                st.session_state["exp_id"] = None
+                st.rerun()
+
+    # ---------------------- 🗑️ SUPPRIMER ----------------------
+            if Supprimer.button("Supprimer une expédition", use_container_width=True):
+                st.session_state["exp_action"] = "delete"
+                st.session_state["exp_id"] = None
+                st.rerun()
+
+# ===== PANNEAUX D'ACTIONS SELON LE CONTEXTE =====
+
+# ---------- ✏️ MODIFIER UNE EXPÉDITION ----------
+            elif st.session_state["exp_action"] == "edit":
+                st.markdown("#### ✏️ Modifier une expédition existante")
+
+                if df_filtered.empty:
+                    st.info("Aucune expédition à modifier avec les filtres actuels.")
+                    st.button("❌ Fermer", on_click=lambda: st.session_state.update({"exp_action": None, "exp_id": None}))
+                else:
+        # Sélection de l'expédition (dans le sous-ensemble filtré)
+                    options = [
+                        (int(row["id"]),
+                        f"{row['nom_lot']} — {row['pays']} — {row['statut']} — {row['agence']} — {row['date_expedition']}")
+                        for _, row in df_filtered.iterrows()
+                    ]
+                    sel = st.selectbox("Sélectionner une expédition", options, format_func=lambda x: x[1])
+                    exp_id = sel[0]
+
+        # Chargement du record complet
+                    exp = next((r for _, r in df_filtered.iterrows() if int(r["id"]) == exp_id), None)
+                    if exp is None:
+                        st.warning("Impossible de charger l'expédition sélectionnée.")
+                        st.button("❌ Fermer", on_click=lambda: st.session_state.update({"exp_action": None, "exp_id": None}))
+                    else:
+            # Livreurs de cette agence (pour mise à jour agent)
                         try:
-                            supabase.table("expedition").update({"statut": new_statut}).eq("id", row["id"]).execute()
-                            st.success("✅ Statut modifié avec succès.")
-                            st.session_state["mod_expedition_id"] = None
-                            st.rerun()
-                        except Exception as e:
-                            st.error(f"Erreur lors de la modification : {e}")
+                            agents_resp = supabase.table("livreurs").select("id, nom, prenom").eq("agence", exp["agence"]).execute()
+                            agents_choices = [(row["id"], f"{row['nom']} {row['prenom']}") for row in (agents_resp.data or [])]
+                        except Exception:
+                            agents_choices = []
 
-            with col3:
-                if st.button("🗑️ Supprimer", key=f"del_{index}"):
-                    try:
-                        supabase.table("expedition").delete().eq("id", row["id"]).execute()
-                        st.warning("🗑️ Expédition supprimée.")
-                        st.rerun()
-                    except Exception as e:
-                        st.error(f"Erreur lors de la suppression : {e}")
+                        with st.form("form_mod_expedition"):
+                            new_statut = st.selectbox(
+                                "Nouveau statut",
+                                ["En attente", "En cours d'expédition", "Expédié"],
+                                index=["En attente", "En cours d'expédition", "Expédié"].index(exp["statut"])
+                            )
+                            new_bordereau = st.text_input("Numéro de bordereau", value=str(exp.get("bordereau", "")))
+                            new_date_exp = st.date_input(
+                                "Date d'expédition",
+                                value=pd.to_datetime(exp["date_expedition"]).date() if pd.notna(exp["date_expedition"]) else date.today()
+                            )
+                            if agents_choices:
+                    # Pré-sélectionner l'agent courant si connu
+                                current_agent_id = int(exp.get("agent_id")) if pd.notna(exp.get("agent_id")) else None
+                    # Trouver l'index
+                                idx = 0
+                                if current_agent_id:
+                                    for i, (aid, _) in enumerate(agents_choices):
+                                        if int(aid) == current_agent_id:
+                                            idx = i; break
+                                    agent_sel = st.selectbox("Agent livreur", agents_choices, index=idx, format_func=lambda x: x[1])
+                                    new_agent_id = agent_sel[0]
+                                else:
+                                    st.info("Aucun livreur connu pour cette agence.")
+                                    new_agent_id = exp.get("agent_id")
 
+                            submit_mod = st.form_submit_button("✅ Enregistrer les modifications")
+                            if submit_mod:
+                                try:
+                                    supabase.table("expedition").update({
+                                        "statut": new_statut,
+                                        "bordereau": new_bordereau,
+                                        "date_expedition": str(new_date_exp),
+                                        "agent_id": new_agent_id
+                                    }).eq("id", exp_id).execute()
+                                    st.success("✅ Expédition modifiée avec succès.")
+                                    st.session_state["exp_action"] = None
+                                    st.session_state["exp_id"] = None
+                                    st.rerun()
+                                except Exception as e:
+                                    st.error(f"Erreur lors de la modification : {e}")
+
+                        st.button("❌ Fermer", on_click=lambda: st.session_state.update({"exp_action": None, "exp_id": None}))
+
+# ---------- 🗑️ SUPPRIMER DES EXPÉDITIONS ----------
+            elif st.session_state["exp_action"] == "delete":
+                st.markdown("#### 🗑️ Supprimer des expéditions")
+
+                if df_filtered.empty:
+                    st.info("Aucune expédition à supprimer avec les filtres actuels.")
+                    st.button("❌ Fermer", on_click=lambda: st.session_state.update({"exp_action": None, "exp_id": None}))
+                else:
+        # Suppression unitaire
+                    options = [(int(row["id"]), f"{row['nom_lot']} — {row['pays']} — {row['agence']} — {row['date_expedition']}") 
+                        for _, row in df_filtered.iterrows()]
+                    sel_del = st.selectbox("Sélectionner une expédition à supprimer", options, format_func=lambda x: x[1])
+                    colA, colB = st.columns(2)
+                    with colA:
+                        if st.button("🗑️ Supprimer l'expédition sélectionnée", type="primary", use_container_width=True):
+                            try:
+                                supabase.table("expedition").delete().eq("id", sel_del[0]).execute()
+                                st.warning("🗑️ Expédition supprimée.")
+                                st.session_state["exp_action"] = None
+                                st.session_state["exp_id"] = None
+                                st.rerun()
+                            except Exception as e:
+                                st.error(f"Erreur lors de la suppression : {e}")
+
+        # Suppression en masse (toutes les expéditions filtrées)
+                    with colB:
+                        if st.button("🧹 Supprimer toutes les expéditions filtrées", use_container_width=True):
+                            try:
+                                ids = [int(i) for i in df_filtered["id"].tolist()]
+                                supabase.table("expedition").delete().in_("id", ids).execute()
+                                st.warning(f"🧹 {len(ids)} expéditions supprimées (jeu filtré).")
+                                st.session_state["exp_action"] = None
+                                st.session_state["exp_id"] = None
+                                st.rerun()
+                            except Exception as e:
+                                st.error(f"Erreur lors de la suppression en masse : {e}")
+
+                    st.button("❌ Fermer", on_click=lambda: st.session_state.update({"exp_action": None, "exp_id": None}))
 
 #Gestion des comptes utilisateurs
 
