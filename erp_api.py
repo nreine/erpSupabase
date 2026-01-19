@@ -2964,8 +2964,8 @@ elif menu == "🔐 Gestion des comptes utilisateurs":
                                   "doit_changer_mdp": True,
                                   "actif": True
                                }
-                               if new_email is not None:
-                                  payload["email"] = new_email
+                            if new_email is not None:
+                                payload["email"] = new_email
 
                                 supabase.table("utilisateurs").insert(payload).execute()
                                 st.success("✅ Utilisateur créé.")
