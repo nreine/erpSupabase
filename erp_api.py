@@ -1942,12 +1942,11 @@ elif menu == "⚙️ Gestion des agences":
     st.markdown("## ⚙️ Gestion des agences")
     st.divider()
 
-    # 📋 Liste des agences existantes
-    st.subheader("📋 Liste des agences existantes")
+    # 📋 Liste des agences existantes   
     try:
         response = supabase.table("agences_livraison").select("*").execute()
         df_agences = pd.DataFrame(response.data)
-        st.dataframe(df_agences, use_container_width=True)
+        
     except Exception as e:
         st.error(f"Erreur lors de la lecture des données : {e}")
         
