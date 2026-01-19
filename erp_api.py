@@ -1939,7 +1939,8 @@ elif menu == "🗂 Inventaire des conditionnements":
 
 #Module gestion des agences
 elif menu == "⚙️ Gestion des agences":
-    st.markdown("## ⚙️ Gestion des agences de livraison")
+    st.markdown("## ⚙️ Gestion des agences")
+    st.divider()
 
     # 📋 Liste des agences existantes
     st.subheader("📋 Liste des agences existantes")
@@ -1949,66 +1950,207 @@ elif menu == "⚙️ Gestion des agences":
         st.dataframe(df_agences, use_container_width=True)
     except Exception as e:
         st.error(f"Erreur lors de la lecture des données : {e}")
+        
+    # --- 📊 Indicateurs des agences (style Inventaire des tests) ---
+    try:
+        # Récupération des agences
+        resp_ag = supabase.table("agences_livraison").select("*").execute()
+        df_agences = pd.DataFrame(resp_ag.data or [])
+
+        # Récupération des livreurs (pour les indicateurs liés)
+        resp_lv = supabase.table("livreurs").select("agence, id").execute()
+        df_livreurs = pd.DataFrame(resp_lv.data or [])
+
+        # Récupération des expéditions (pour les indicateurs liés)
+        resp_ex = supabase.table("expedition").select("agence, statut").execute()
+        df_expeditions = pd.DataFrame(resp_ex.data or [])
+    except Exception as e:
+        st.error(f"Erreur de lecture des indicateurs : {e}")
+        df_agences = pd.DataFrame()
+        df_livreurs = pd.DataFrame()
+        df_expeditions = pd.DataFrame()
+
+    # --- 🔎 Filtres Agences (comme Inventaire des tests) ---
+    if not df_agences.empty:
+        st.sidebar.header("🔎 Filtres Agences")
+        pays_uniques = df_agences["pays"].dropna().unique().tolist()
+        agences_uniques = df_agences["agence"].dropna().unique().tolist()
+
+        pays_selection = st.sidebar.multiselect("Pays", pays_uniques, default=pays_uniques)
+        agence_selection = st.sidebar.multiselect("Agence", agences_uniques, default=agences_uniques)
+
+        df_agences_f = df_agences[
+            (df_agences["pays"].isin(pays_selection)) &
+            (df_agences["agence"].isin(agence_selection))
+        ]
+    else:
+        df_agences_f = pd.DataFrame()
+
+    # --- 📈 KPIs ---
+    with st.container(border=True):
+        if df_agences_f.empty:
+            col1, col2, col3, col4 = st.columns(4)
+            col1.metric("🏢 Total agences", 0, border=True)
+            col2.metric("🌍 Pays couverts", 0, border=True)
+            col3.metric("👥 Agences avec livreur", 0, border=True)
+            col4.metric("📦 Agences avec expéditions", 0, border=True)
+        else:
+            total_agences = int(df_agences_f["agence"].nunique())
+            pays_couverts = int(df_agences_f["pays"].nunique())
+
+            # Livreurs par agence
+            if not df_livreurs.empty:
+                lv_counts = df_livreurs.groupby("agence").size().reset_index(name="nb_livreurs")
+                agences_avec_livreur = int(lv_counts["agence"].nunique())
+            else:
+                lv_counts = pd.DataFrame(columns=["agence", "nb_livreurs"])
+                agences_avec_livreur = 0
+
+            agences_sans_livreur = max(0, total_agences - agences_avec_livreur)
+
+            # Expéditions par agence (statut expédié)
+            if not df_expeditions.empty:
+                exp_filtre = df_expeditions[
+                    df_expeditions["statut"].astype(str).str.lower() == "expédié"
+                ]
+                exp_counts = exp_filtre.groupby("agence").size().reset_index(name="nb_expeditions")
+                agences_avec_expeditions = int(exp_counts["agence"].nunique())
+            else:
+                exp_counts = pd.DataFrame(columns=["agence", "nb_expeditions"])
+                agences_avec_expeditions = 0
+
+        # Affichage métriques
+            col1, col2, col3 = st.columns(3)
+            col1.metric("🏢 Total agences", total_agences, f"{total_agences} agences enregistrées", border=True)
+            col2.metric("🌍 Pays couverts", pays_couverts, f"{pays_couverts} pays concernés", border=True)
+            col3.metric("👥 Agence dotée de livreurs", agences_avec_livreur, f"{agences_avec_livreur} agences avec livreurs", border=True)
+            #col4.metric("📦 Nombre agences désservies", agences_avec_expeditions, agences_avec_expeditions, border=True)
+    
+    st.dataframe(df_agences_f, use_container_width=True)
 
     st.divider()
+    if "agence_action" not in st.session_state:
+        st.session_state["agence_action"] = None  # "add" | "edit" | "delete"
 
-    # 🛠 Choix de l'action
-    action = st.radio("Choisissez une action :", ["Ajouter", "Modifier", "Supprimer"])
-
-    if action == "Ajouter":
-        st.subheader("➕ Ajouter une nouvelle agence")
-        nouveau_pays = st.text_input("Pays")
-        nouvelle_agence = st.text_input("Nom de l'agence")
+    with st.container(border=True):
+        st.markdown("<h4>🛠️Effectuer une action sur une agence</h4>", unsafe_allow_html=True)
+        AjouterA, ModifierA, SupprimerA = st.columns(3)
         
-        if st.button("✅ Ajouter"):
-            if nouveau_pays and nouvelle_agence:
-                try:
-            # 🔍 Vérification des doublons
-                    doublon = supabase.table("agences_livraison").select("pays", "agence")\
-                    .eq("pays", nouveau_pays)\
-                    .eq("agence", nouvelle_agence).execute().data
+        if AjouterA.button("Ajouter une agence", use_container_width=True):
+            st.session_state["agence_action"] = "add"
+            st.rerun()
+            
+        if ModifierA.button("Modifier une agence", use_container_width=True):
+            st.session_state["agence_action"] = "edit"
+            st.rerun()
 
-                    if doublon:
-                        st.warning(f"⚠️ L'agence '{nouvelle_agence}' pour le pays '{nouveau_pays}' existe déjà.")
+        if SupprimerA.button("Supprimer une agence", use_container_width=True):
+            st.session_state["agence_action"] = "delete"
+            st.rerun()
+            
+        
+        elif st.session_state["agence_action"] == "add":
+            st.subheader("➕ Ajouter une nouvelle agence")
+            nouveau_pays = st.text_input("Pays")
+            nouvelle_agence = st.text_input("Nom de l'agence")
+
+            colA, colB = st.columns(2)
+            with colA:
+                if st.button("✅ Ajouter", type="secondary", use_container_width=True):
+                    if nouveau_pays and nouvelle_agence:
+                        try:
+                            
+# 👇 valeurs depuis la session, avec repli si indisponibles
+                            created_by = st.session_state.get("user_id") or st.session_state.get("display_name") or "system"
+                            operateur = st.session_state.get("display_name") or st.session_state.get("user_id") or "system"
+
+                    # Vérification doublon
+                            doublon = supabase.table("agences_livraison").select("pays", "agence") \
+                                .eq("pays", nouveau_pays).eq("agence", nouvelle_agence).execute().data
+                            if doublon:
+                                st.warning(f"⚠️ L'agence '{nouvelle_agence}' pour le pays '{nouveau_pays}' existe déjà.")
+                            else:
+                                supabase.table("agences_livraison").insert({
+                                    "pays": nouveau_pays,
+                                    "agence": nouvelle_agence,                                    
+                                    "created_by": created_by,
+                                    "operateur": operateur
+                                }).execute()
+                                st.success(f"✅ Agence ajoutée pour {nouveau_pays}")
+                                st.session_state["agence_action"] = None
+                                st.rerun()
+                        except Exception as e:
+                            st.error(f"Erreur : {e}")
                     else:
-                # ✅ Ajout si pas de doublon
-                        supabase.table("agences_livraison").insert({
-                            "pays": nouveau_pays,
-                            "agence": nouvelle_agence
-                        }).execute()
-                        st.success(f"✅ Agence ajoutée pour {nouveau_pays}")
-                        st.rerun()
-                except Exception as e:
-                    st.warning(f"⚠️ Erreur : {e}")
+                        st.warning("Veuillez renseigner tous les champs.")
+            with colB:
+                st.button("❌ Fermer", use_container_width=True,
+                    on_click=lambda: st.session_state.update({"agence_action": None}))
+                
+                
+        elif st.session_state["agence_action"] == "edit":
+            st.subheader("✏️ Modifier une agence existante")
+
+    # Charger la liste des agences
+            response = supabase.table("agences_livraison").select("pays, agence").execute()
+            agences = [(row["pays"], row["agence"]) for row in (response.data or [])]
+
+            if not agences:
+                st.info("Aucune agence disponible pour modification.")
+                st.button("❌ Fermer", on_click=lambda: st.session_state.update({"agence_action": None}))
             else:
-                st.warning("Veuillez renseigner tous les champs.")
+                sel = st.selectbox("Sélectionnez une agence :", agences, format_func=lambda x: f"{x[0]} — {x[1]}")
+                pays_sel, agence_sel = sel
 
-    elif action == "Modifier":
-        st.subheader("✏️ Modifier une agence existante")
-        response = supabase.table("agences_livraison").select("pays, agence").execute()
-        agences = [(row["pays"], row["agence"]) for row in response.data]
-        if agences:
-            agence_selectionnee = st.selectbox("Sélectionnez une agence :", agences, format_func=lambda x: f"{x[0]} - {x[1]}")
-            nouveau_nom = st.text_input("Nouveau nom de l'agence", value=agence_selectionnee[1])
-            if st.button("✅ Modifier"):
-                supabase.table("agences_livraison").update({"agence": nouveau_nom}).eq("pays", agence_selectionnee[0]).execute()
-                st.success(f"✏️ Agence modifiée pour {agence_selectionnee[0]}")
-                st.rerun()
-        else:
-            st.info("Aucune agence disponible pour modification.")
+                with st.form("form_mod_agence"):
+                    new_pays = st.text_input("Pays", value=pays_sel)
+                    new_nom = st.text_input("Nom de l'agence", value=agence_sel)
+                    submit_mod = st.form_submit_button("✅ Mettre à jour")
+                    if submit_mod:
+                        try:
+                            supabase.table("agences_livraison").update({
+                                "pays": new_pays,
+                                "agence": new_nom
+                            }).eq("pays", pays_sel).eq("agence", agence_sel).execute()
+                            st.success("✅ Agence modifiée avec succès.")
+                            st.session_state["agence_action"] = None
+                            st.rerun()
+                        except Exception as e:
+                            st.error(f"Erreur lors de la modification : {e}")
 
-    elif action == "Supprimer":
-        st.subheader("🗑️ Supprimer une agence existante")
-        response = supabase.table("agences_livraison").select("pays, agence").execute()
-        agences = [(row["pays"], row["agence"]) for row in response.data]
-        if agences:
-            agence_selectionnee = st.selectbox("Sélectionnez une agence à supprimer :", agences, format_func=lambda x: f"{x[0]} - {x[1]}")
-            if st.button("🗑️ Supprimer"):
-                supabase.table("agences_livraison").delete().eq("pays", agence_selectionnee[0]).execute()
-                st.warning(f"🗑️ Agence supprimée pour {agence_selectionnee[0]}")
-                st.rerun()
-        else:
-            st.info("Aucune agence disponible pour suppression.")
+                st.button("❌ Fermer", on_click=lambda: st.session_state.update({"agence_action": None}))
+
+                
+        elif st.session_state["agence_action"] == "delete":
+            st.subheader("🗑️ Supprimer une agence existante")
+
+    # Charger la liste des agences
+            response = supabase.table("agences_livraison").select("pays, agence").execute()
+            agences = [(row["pays"], row["agence"]) for row in (response.data or [])]
+
+            if not agences:
+                st.info("Aucune agence disponible pour suppression.")
+                st.button("❌ Fermer", on_click=lambda: st.session_state.update({"agence_action": None}))
+            else:                
+                sel = st.selectbox("Sélectionnez une agence à supprimer :", agences,
+                       format_func=lambda x: f"{x[0]} — {x[1]}")
+                pays_sel, agence_sel = sel
+                st.warning(f"⚠️ Vous allez supprimer l'agence : {agence_sel} ({pays_sel})")
+
+                colA, colB = st.columns(2)
+                with colA:
+                    confirm_one = st.checkbox("Je confirme la suppression", key="confirm_del_agence")
+                    if st.button("🗑️ Supprimer", type="primary", use_container_width=True, disabled=not confirm_one):
+                        try:
+                            supabase.table("agences_livraison").delete().eq("pays", pays_sel).eq("agence", agence_sel).execute()
+                            st.warning("🗑️ Agence supprimée.")
+                            st.session_state["agence_action"] = None
+                            st.rerun()
+                        except Exception as e:
+                            st.error(f"Erreur lors de la suppression : {e}")
+                
+                    st.button("❌ Fermer", on_click=lambda: st.session_state.update({"agence_action": None}))
+
 
 #Module expédition des lots
 elif menu == "🚚 Expédition des lots":
