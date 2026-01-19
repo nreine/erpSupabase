@@ -919,6 +919,7 @@ elif menu == "📋 Visualisation des lots":
     supabase = create_client(url, key)
 
     st.markdown("## 📋 Visualisation des lots")
+    st.divider()
 
     
 # Pagination pour récupérer tous les lots
