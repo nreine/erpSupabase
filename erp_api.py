@@ -1324,6 +1324,7 @@ elif menu == "🧪 Contrôle qualité":
 
 elif menu == "🗂 Inventaire des tests":
     st.markdown("## 🗂 Inventaire du contrôle qualité")
+    st.divider()
 
     # Pagination pour récupérer toutes les lignes
     page_size = 1000
@@ -1395,8 +1396,6 @@ elif menu == "🗂 Inventaire des tests":
             (df["filiale"].isin(filiale_selection)) &
             (df["resultat"].isin(resultat_selection))
         ]
-
-        st.dataframe(df_filtered, use_container_width=True)
 
         # KPIs
         with st.container(border=True):
