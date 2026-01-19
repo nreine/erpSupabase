@@ -2244,98 +2244,297 @@ elif menu == "🚚 Expédition des lots":
 #Module annuaire de livraison
 elif menu == "📇 Annuaire des livreurs":
     st.markdown("## 📇 Annuaire des livreurs")
+    st.divider()
 
     # 🔍 Récupération des livreurs
+   
     try:
         livreurs_response = supabase.table("livreurs").select("id, agence, nom, prenom, contact").execute()
-        livreurs = livreurs_response.data
+        livreurs = livreurs_response.data or []
         df_livreurs = pd.DataFrame(livreurs)
-        st.dataframe(df_livreurs, use_container_width=True)
     except Exception as e:
         st.error(f"Erreur lors de la récupération des livreurs : {e}")
         livreurs = []
+        df_livreurs = pd.DataFrame()
+
 
     # 🔍 Récupération des agences existantes
+
     try:
-        agences_response = supabase.table("agences_livraison").select("agence").execute()
-        agences_existantes = [row["agence"] for row in agences_response.data]
+        agences_response = supabase.table("agences_livraison").select("agence, pays").execute()
+        agences_data = agences_response.data or []
+        df_agences = pd.DataFrame(agences_data)
     except Exception as e:
         st.error(f"Erreur lors de la récupération des agences : {e}")
-        agences_existantes = []
+        df_agences = pd.DataFrame(columns=["agence", "pays"])
 
-    # ➕ Ajout d'un livreur
-    st.subheader("➕ Ajouter un livreur")
-    with st.form("form_ajout_livreur"):
-        col1, col2 = st.columns(2)
-        with col1:
-            agence = st.selectbox("Agence de livraison", agences_existantes)
-            nom = st.text_input("Nom")
-            prenom = st.text_input("Prénom")
-        with col2:
-            contact = st.text_input("Contact")
-        submit_ajout = st.form_submit_button("✅ Ajouter")
-        if submit_ajout:
-            try:
-               # 🔍 Vérification des doublons : même agence + même nom + même prénom
-                doublon = supabase.table("livreurs").select("agence", "nom", "prenom")\
-                    .eq("agence", agence)\
-                    .eq("nom", nom)\
-                    .eq("prenom", prenom).execute().data
+    # ==============================
+    # 2) Préparation & jointure pour enrichir de 'pays'
+    # ==============================
+    if not df_livreurs.empty:
+        df_livreurs["nom"] = df_livreurs["nom"].astype(str)
+        df_livreurs["prenom"] = df_livreurs["prenom"].astype(str)
+        df_livreurs["contact"] = df_livreurs["contact"].astype(str)
+    df_annuaire = df_livreurs.copy()
 
-                if doublon:
-                    st.warning(f"⚠️ Le livreur {nom} {prenom} existe déjà pour l'agence {agence}.")
+    if not df_livreurs.empty and not df_agences.empty:
+        df_annuaire = df_livreurs.merge(df_agences[["agence", "pays"]], on="agence", how="left")
+    else:
+        if not df_annuaire.empty and "pays" not in df_annuaire.columns:
+            df_annuaire["pays"] = "—"
+
+    # ==============================
+    # 3) Filtres latéraux
+    # ==============================
+    st.sidebar.header("🔎 Filtres (Annuaire)")
+    if df_annuaire.empty:
+        st.info("Aucun livreur enregistré pour le moment.")
+        # On garde la suite (actions) pour permettre d'ajouter des livreurs
+    else:
+        # Listes de choix
+        pays_list = sorted([p for p in df_annuaire["pays"].dropna().unique().tolist()]) if "pays" in df_annuaire.columns else []
+        agences_list = sorted(df_annuaire["agence"].dropna().unique().tolist())
+
+        # Widgets de filtres
+        pays_sel = st.sidebar.multiselect("🌍 Pays", pays_list, default=pays_list) if pays_list else []
+        agence_sel = st.sidebar.multiselect("🏢 Agence", agences_list, default=agences_list)
+        search_name = st.sidebar.text_input("🔤 Saisir Nom/Prénom", "")
+        contact_sel = st.sidebar.text_input("📞 Saisir Contact", "")
+
+        # Application des filtres
+        df_filtered = df_annuaire.copy()
+        if pays_list:
+            df_filtered = df_filtered[df_filtered["pays"].isin(pays_sel)]
+        if agences_list:
+            df_filtered = df_filtered[df_filtered["agence"].isin(agence_sel)]
+        if search_name.strip():
+            s = search_name.lower()
+            df_filtered = df_filtered[
+                df_filtered["nom"].str.lower().str.contains(s) |
+                df_filtered["prenom"].str.lower().str.contains(s)
+            ]
+        if contact_sel.strip():
+            s2 = contact_sel.lower()
+            df_filtered = df_filtered[df_filtered["contact"].astype(str).str.lower().str.contains(s2)]
+
+        # ==============================
+        # 4) Indicateurs (KPIs)
+        # ==============================
+        with st.container(border=True):
+            total_livreurs = len(df_filtered)
+            nb_agences = int(df_filtered["agence"].nunique()) if not df_filtered.empty else 0
+            avg_livreurs = round(total_livreurs / nb_agences) if nb_agences else 0
+
+            top_agence, top_count = "—", 0
+            if not df_filtered.empty:
+                grp = df_filtered.groupby("agence").size().reset_index(name="nb")
+                top_row = grp.sort_values("nb", ascending=False).head(1)
+                if not top_row.empty:
+                    top_agence = str(top_row.iloc[0]["agence"])
+                    top_count = int(top_row.iloc[0]["nb"])
+
+            col1, col2, col3 = st.columns(3)
+            col1.metric("👥 Total livreurs", total_livreurs, f"{total_livreurs} livreurs enrégistrés", border=True)
+            col2.metric("🏢 Agences de livraison", nb_agences, f"{nb_agences} agences de livraisons", border=True)
+            #col2.metric("📈 Moyenne liv./agence", avg_livreurs, avg_livreurs, border=True)
+            col3.metric("🏆 Top agence", top_agence, f"{top_count} livraisons faites", border=True)
+        st.dataframe(df_livreurs, use_container_width=True)
+    st.divider()
+
+
+    
+# ==============================
+    # 2) Etat persistant d'action
+    # ==============================
+    if "livreur_action" not in st.session_state:
+        st.session_state["livreur_action"] = None  # "add" | "edit" | "delete"
+    if "livreur_id" not in st.session_state:
+        st.session_state["livreur_id"] = None
+
+    # ==============================
+    # 3) Barre d'actions
+    # ==============================
+    with st.container(border=True):
+        st.markdown("### 🛠️ Exécuter une action")
+        AjouterL, ModifierL, SupprimerL = st.columns(3)
+
+        if AjouterL.button("Ajouter un livreur", use_container_width=True):
+            st.session_state["livreur_action"] = "add"
+            st.session_state["livreur_id"] = None
+            st.rerun()
+
+        if ModifierL.button("Modifier un livreur", use_container_width=True):
+            st.session_state["livreur_action"] = "edit"
+            st.session_state["livreur_id"] = None
+            st.rerun()
+
+        if SupprimerL.button("Supprimer un livreur", use_container_width=True):
+            st.session_state["livreur_action"] = "delete"
+            st.session_state["livreur_id"] = None
+            st.rerun()
+
+    # ==============================
+    # 9) PANNEAU : AJOUTER
+    # ==============================
+        if st.session_state["livreur_action"] == "add":
+            st.markdown("#### ➕ Ajouter un livreur")
+
+        # Liste des agences existantes
+            agences_existantes = df_agences["agence"].dropna().unique().tolist() if not df_agences.empty else []
+
+            if not agences_existantes:
+                st.warning("Aucune agence n'est disponible. Ajoutez d'abord une agence dans l'onglet **Gestion des agences**.")
+                st.button("❌ Fermer", on_click=lambda: st.session_state.update({"livreur_action": None}))
+            else:
+                with st.form("form_ajout_livreur_persistant"):
+                    col1, col2 = st.columns(2)
+                    with col1:
+                        agence = st.selectbox("Agence de livraison", agences_existantes)
+                        nom = st.text_input("Nom")
+                    with col2:
+                        prenom = st.text_input("Prénom")
+                        contact = st.text_input("Contact")
+
+                    submitted = st.form_submit_button("✅ Ajouter")
+                    if submitted:
+                        try:
+                        # Vérifier doublon (agence + nom + prenom)
+                            doublon = supabase.table("livreurs").select("id") \
+                                .eq("agence", agence).eq("nom", nom).eq("prenom", prenom).execute().data
+                            if doublon:
+                                st.warning(f"⚠️ Le livreur {nom} {prenom} existe déjà pour l'agence {agence}.")
+                            else:
+                            # Si votre table 'livreurs.id' n'est PAS en IDENTITY, on génère next_id
+                                try:
+                                    last_id_data = supabase.table("livreurs").select("id").order("id", desc=True).limit(1).execute().data
+                                    next_id = (last_id_data[0]["id"] + 1) if last_id_data else 1
+                                except Exception:
+                                    next_id = None  # si IDENTITY, on n'enverra pas 'id'
+
+                                    payload = {
+                                        "agence": agence,
+                                        "nom": nom,
+                                        "prenom": prenom,
+                                        "contact": contact
+                                    }
+                                    if next_id is not None:
+                                        payload["id"] = next_id
+
+                                        supabase.table("livreurs").insert(payload).execute()
+                                        st.success(f"✅ Livreurs ajouté pour l'agence {agence}")
+                                        st.session_state["livreur_action"] = None
+                                        st.rerun()
+                        except Exception as e:
+                            st.error(f"Erreur lors de l'ajout : {e}")
+
+                st.button("❌ Fermer", on_click=lambda: st.session_state.update({"livreur_action": None}))
+
+    # ==============================
+    # 10) PANNEAU : MODIFIER
+    # ==============================
+        elif st.session_state["livreur_action"] == "edit":
+            st.markdown("#### ✏️ Modifier un livreur")
+            if not livreurs:
+                st.info("Aucun livreur à modifier.")
+                st.button("❌ Fermer", on_click=lambda: st.session_state.update({"livreur_action": None}))
+            else:
+                options = [(int(row["id"]), f"{row['agence']} — {row['nom']} {row['prenom']} ({row.get('contact','')})")
+                       for row in livreurs]
+                sel = st.selectbox("Sélectionnez un livreur", options, format_func=lambda x: x[1],
+                               key="select_livreur_edit")
+                st.session_state["livreur_id"] = sel[0]
+
+            # Charger l'enregistrement choisi
+                record = next((row for row in livreurs if int(row["id"]) == int(st.session_state["livreur_id"])), None)
+                if record is None:
+                    st.warning("Impossible de charger le livreur sélectionné.")
+                    st.button("❌ Fermer", on_click=lambda: st.session_state.update({"livreur_action": None, "livreur_id": None}))
                 else:
-                # ✅ Ajout si pas de doublon
-                    supabase.table("livreurs").insert({
-                        "agence": agence,
-                        "nom": nom,
-                        "prenom": prenom,
-                        "contact": contact
-                    }).execute()
-                    st.success(f"✅ Livreurs ajouté pour l'agence {agence}")
-                    st.rerun()
-            except Exception as e:
-                st.error(f"Erreur lors de l'ajout : {e}")
+                    agences_existantes = df_agences["agence"].dropna().unique().tolist() if not df_agences.empty else [record["agence"]]
+                    with st.form("form_modif_livreur_persistant"):
+                        col1, col2 = st.columns(2)
+                        with col1:
+                            new_agence = st.selectbox(
+                                "Agence",
+                                agences_existantes,
+                                index=(agences_existantes.index(record["agence"]) if record["agence"] in agences_existantes else 0)
+                            )
+                            new_nom = st.text_input("Nom", value=record["nom"])
+                        with col2:
+                            new_prenom = st.text_input("Prénom", value=record["prenom"])
+                            new_contact = st.text_input("Contact", value=record.get("contact", ""))
 
-    # ✏️ Modification / Suppression
-    st.subheader("🛠️ Modifier ou Supprimer un livreur")
-    livreur_dict = {f"{l['agence']} - {l['nom']} {l['prenom']} ({l['contact']})": l["id"] for l in livreurs}
-    selected_livreur = st.selectbox("Sélectionner un livreur", list(livreur_dict.keys()))
-    livreur_id = livreur_dict[selected_livreur]
+                            submit_mod = st.form_submit_button("✅ Mettre à jour")
+                            if submit_mod:
+                                try:
+                            # éviter un doublon après modif (même triple agence+nom+prenom)
+                                    conflict = supabase.table("livreurs").select("id") \
+                                       .eq("agence", new_agence).eq("nom", new_nom).eq("prenom", new_prenom).execute().data
+                                    conflict_ids = {int(r["id"]) for r in (conflict or [])}
+                                    if st.session_state["livreur_id"] not in conflict_ids and conflict_ids:
+                                        st.warning(f"⚠️ Un livreur {new_nom} {new_prenom} existe déjà pour l'agence {new_agence}.")
+                                    else:
+                                        update_payload = {
+                                            "agence": new_agence,
+                                            "nom": new_nom,
+                                            "prenom": new_prenom,
+                                            "contact": new_contact
+                                        }
+                                # (Optionnel) tracer opérateur :
+                                # update_payload["operateur"] = st.session_state.get("display_name") or st.session_state.get("user_id") or "system"
 
-    selected_data = next((l for l in livreurs if l["id"] == livreur_id), None)
-    if selected_data:
-        with st.form("form_modif_livreur"):
-            col1, col2 = st.columns(2)
-            with col1:
-                new_agence = st.selectbox("Agence", agences_existantes, index=agences_existantes.index(selected_data["agence"]) if selected_data["agence"] in agences_existantes else 0)
-                new_nom = st.text_input("Nom", value=selected_data["nom"])
-            with col2:
-                new_prenom = st.text_input("Prénom", value=selected_data["prenom"])
-                new_contact = st.text_input("Contact", value=selected_data["contact"])
-            action = st.radio("Action", ["Modifier", "Supprimer"])
-            submitted = st.form_submit_button("✅ Valider")
+                                        supabase.table("livreurs").update(update_payload) \
+                                            .eq("id", int(st.session_state["livreur_id"])).execute()
+                                        st.success("✅ Livreurs modifié avec succès.")
+                                        st.session_state["livreur_action"] = None
+                                        st.session_state["livreur_id"] = None
+                                        st.rerun()
+                                except Exception as e:
+                                    st.error(f"Erreur lors de la modification : {e}")
 
-            if submitted:
-                if action == "Modifier":
-                    try:
-                        supabase.table("livreurs").update({
-                            "agence": new_agence,
-                            "nom": new_nom,
-                            "prenom": new_prenom,
-                            "contact": new_contact
-                        }).eq("id", livreur_id).execute()
-                        st.success("✏️ Livreurs modifié avec succès.")
-                        st.rerun()
-                    except Exception as e:
-                        st.error(f"Erreur lors de la modification : {e}")
-                elif action == "Supprimer":
-                    try:
-                        supabase.table("livreurs").delete().eq("id", livreur_id).execute()
-                        st.warning("🗑️ Livreurs supprimé.")
-                        st.rerun()
-                    except Exception as e:
-                        st.error(f"Erreur lors de la suppression : {e}")
+                    st.button("❌ Fermer", on_click=lambda: st.session_state.update({"livreur_action": None, "livreur_id": None}))
+
+    # ==============================
+    # 11) PANNEAU : SUPPRIMER
+    # ==============================
+        elif st.session_state["livreur_action"] == "delete":
+            st.markdown("#### 🗑️ Supprimer un livreur")
+            if not livreurs:
+                st.info("Aucun livreur à supprimer.")
+                st.button("❌ Fermer", on_click=lambda: st.session_state.update({"livreur_action": None}))
+            else:
+                options = [(int(row["id"]), f"{row['agence']} — {row['nom']} {row['prenom']} ({row.get('contact','')})")
+                       for row in livreurs]
+                sel = st.selectbox("Sélectionnez un livreur à supprimer", options, format_func=lambda x: x[1],
+                               key="select_livreur_delete")
+                st.session_state["livreur_id"] = sel[0]
+
+            # Aperçu
+                record = next((row for row in livreurs if int(row["id"]) == int(st.session_state["livreur_id"])), None)
+                if record:
+                    with st.container(border=True):
+                        st.write(
+                            f"**Agence :** {record['agence']}  \n"
+                            f"**Nom :** {record['nom']}  \n"
+                            f"**Prénom :** {record['prenom']}  \n"
+                            f"**Contact :** {record.get('contact','—')}"
+                        )
+
+                        colA, colB = st.columns(2)
+                        with colA:
+                            confirm = st.checkbox("Je confirme la suppression", key="confirm_del_livreur")
+                            if st.button("🗑️ Supprimer", type="primary", use_container_width=True, disabled=not confirm):
+                                try:
+                                    supabase.table("livreurs").delete().eq("id", int(st.session_state["livreur_id"])).execute()
+                                    st.warning("🗑️ Livreurs supprimé.")
+                                    st.session_state["livreur_action"] = None
+                                    st.session_state["livreur_id"] = None
+                                    st.rerun()
+                                except Exception as e:
+                                    st.error(f"Erreur lors de la suppression : {e}")
+            
+                    st.button("❌ Fermer",
+                          on_click=lambda: st.session_state.update({"livreur_action": None, "livreur_id": None}))
 
 #Module visualisation des expéditions
 
