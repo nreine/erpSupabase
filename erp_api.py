@@ -2801,7 +2801,7 @@ elif menu == "📦 Visualisation des expéditions":
 #Gestion des comptes utilisateurs
 
 elif menu == "🔐 Gestion des comptes utilisateurs":
-    st.markdown("<h2 style='text-align:center;'>🔐 Gestion des comptes utilisateurs</h2>", unsafe_allow_html=True)
+    st.markdown("<h2>🔐 Gestion des comptes utilisateurs</h2>", unsafe_allow_html=True)
     st.markdown("<hr>", unsafe_allow_html=True)
 
     if st.session_state.get("role") != "admin":
