@@ -1223,6 +1223,7 @@ elif menu == "🧪 Contrôle qualité":
     supabase = create_client(url, key)
 
     st.markdown("## 🧪 Contrôle qualité")
+    st.divider()
 
     # Récupération des lots
     response = supabase.table("lots").select("id", "nom_lot").execute()
