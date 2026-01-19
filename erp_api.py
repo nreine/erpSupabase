@@ -3134,13 +3134,13 @@ elif menu == "🔐 Gestion des comptes utilisateurs":
                         key = int(u["id"]) if has_id_pk and u.get("id") is not None else str(u.get("identifiant"))
                         options.append((key, label))
 
-                     sel = st.selectbox("Sélectionner un utilisateur à supprimer", options, format_func=lambda x: x[1], key="select_user_delete")
-                     st.session_state["user_target"] = sel[0]
+                    sel = st.selectbox("Sélectionner un utilisateur à supprimer", options, format_func=lambda x: x[1], key="select_user_delete")
+                    st.session_state["user_target"] = sel[0]
 
-                     colA, colB = st.columns(2)
+                    colA, colB = st.columns(2)
                     
-                     with colA:
-                    confirm = st.checkbox("Je confirme la suppression")
+                    with colA:
+                        confirm = st.checkbox("Je confirme la suppression")
                         if st.button("🗑️ Supprimer", type="primary", use_container_width=True, disabled=not confirm):
                             try:
                                 q = supabase.table("utilisateurs").delete()
@@ -3156,7 +3156,7 @@ elif menu == "🔐 Gestion des comptes utilisateurs":
                             except Exception as e:
                                 st.error(f"Erreur lors de la suppression : {e}")
 
-                        st.button("❌ Fermer", on_click=lambda: st.session_state.update({"user_action": None, "user_target": None}))
+                    st.button("❌ Fermer", on_click=lambda: st.session_state.update({"user_action": None, "user_target": None}))
 
 
 # Message de bienvenue et déconnexion
