@@ -1399,60 +1399,185 @@ elif menu == "🗂 Inventaire des tests":
         st.dataframe(df_filtered, use_container_width=True)
 
         # KPIs
-        st.subheader("📊 Résumé des tests")
-        total_testees = df_filtered["quantite_a_tester"].sum()
-        nb_reussites = df_filtered[df_filtered["resultat"] == "Réussite"].shape[0]
-        nb_echecs = df_filtered[df_filtered["resultat"] == "Échec"].shape[0]
-        col1, col2, col3 = st.columns(3)
-        col1.metric("Total de cartes testées", total_testees)
-        col2.metric("Nombre de réussite", nb_reussites)
-        col3.metric("Nombre d'échecs", nb_echecs)
+        with st.container(border=True):
+            #st.subheader("Indicateurs des tests")
+            total_testees = df_filtered["quantite_a_tester"].sum()
+            nb_reussites = df_filtered[df_filtered["resultat"] == "Réussite"].shape[0]
+            nb_echecs = df_filtered[df_filtered["resultat"] == "Échec"].shape[0]
+            col1, col2, col3 = st.columns(3)
+            col1.metric("🔢Total cartes testées", total_testees, f"{total_testees} cartes testées", border=True)
+            col2.metric("✅Tests réussis", nb_reussites, f"{nb_reussites} tests réussis", border=True)
+            col3.metric("❌Tests échoués", nb_echecs, f"{nb_echecs} tests échoués", border=True)
 
-        # Gestion des tests enregistrés
-        st.subheader("🛠️ Gestion des tests enregistrés")
-        for index, row in df_filtered.iterrows():
-            col1, col2, col3 = st.columns([4, 1, 1])
-            with col1:
-                st.write(f"""
-                📄 **{row['nom_lot']}**
-                {row['filiale']}
-                {row['type_carte']}
-                {row['quantite']} cartes
-                {row['quantite_a_tester']} à tester
-                {row['resultat']}
-                {row['remarque']}
-                """)
+        st.dataframe(df_filtered, use_container_width=True)
+        st.divider()
 
-            with col2:
-                if st.button("✏️ Modifier", key=f"mod_{index}"):
-                    st.session_state["mod_test_id"] = row["id"]
-                    st.rerun()
+        
+        # --- 🛠️ Gestion des tests enregistrés (version actions Ajouter / Modifier / Supprimer) ---
 
-            if st.session_state.get("mod_test_id") == row["id"]:
-                with st.form(f"form_mod_{index}"):
-                    new_type = st.text_input("Type de carte", value=row["type_carte"])
-                    new_quantite = st.number_input("Nouvelle quantité", value=row["quantite"], min_value=1)
-                    new_quantite_test = st.number_input("Nouvelle quantité à tester", value=row["quantite_a_tester"], min_value=1)
-                    new_resultat = st.selectbox("Résultat", ["Réussite", "Échec"], index=["Réussite", "Échec"].index(row["resultat"]))
-                    new_remarque = st.text_area("Remarque", value=row["remarque"])
-                    submit_mod = st.form_submit_button("✅ Enregistrer les modifications")
-                    if submit_mod:
-                        supabase.table("controle_qualite").update({
-                            "type_carte": new_type,
-                            "quantite": new_quantite,
-                            "quantite_a_tester": new_quantite_test,
-                            "resultat": new_resultat,
-                            "remarque": new_remarque
-                        }).eq("id", row["id"]).execute()
-                        st.success("✅ Test modifié avec succès.")
-                        st.session_state["mod_test_id"] = None
-                        st.rerun()
+# État local pour les actions sur tests
+        if "test_action" not in st.session_state:
+            st.session_state["test_action"] = None   # "edit" | "delete"
+        if "test_id_cible" not in st.session_state:
+            st.session_state["test_id_cible"] = None
 
-            with col3:
-                if st.button("🗑️ Supprimer", key=f"del_{index}"):
-                    supabase.table("controle_qualite").delete().eq("id", row["id"]).execute()
-                    st.warning("🗑️ Test supprimé.")
-                    st.rerun()
+        with st.container(border=True):
+            st.markdown("<h4>🛠️ Effectuer une action sur les tests enregistrés</h4>", unsafe_allow_html=True)
+            ModifierT, SupprimerT = st.columns(2)
+
+
+        # ---------------------- ✏️ MODIFIER ----------------------
+            
+            if ModifierT.button("Modifier un contrôle", use_container_width=True):
+                st.session_state["test_action"] = "edit"
+                st.session_state["test_id_cible"] = None
+                st.rerun()
+
+                
+# 🗑️ SUPPRIMER → on bascule l'état et on rerun
+            if SupprimerT.button("Supprimer un contrôle", use_container_width=True):
+                st.session_state["test_action"] = "delete"
+                st.session_state["test_id_cible"] = None
+                st.rerun()
+
+            
+# === PANNEAU MODIFIER (persistant) ===
+            elif st.session_state["test_action"] == "edit":
+                st.markdown("### ✏️ Modifier un test")
+                if df_filtered.empty:
+                    st.info("Aucun enregistrement à modifier avec les filtres actuels.")
+                    st.button("❌ Fermer", on_click=lambda: st.session_state.update({"test_action": None, "test_id_cible": None}))
+                else:
+                    options = [
+                        (
+                            int(row["id"]),
+                            f"{row['nom_lot']} — {row['filiale']} — {row['type_carte']} "
+                            f"({row['quantite']}→{row['quantite_a_tester']}) — {row['resultat']} — {row['date_controle'].date()}"
+                        )
+                        for _, row in df_filtered.iterrows()
+                    ]
+                    if not options:
+                        st.info("Aucun test disponible pour modification avec les filtres actuels.")
+                        st.button("❌ Fermer", on_click=lambda: st.session_state.update({"test_action": None, "test_id_cible": None}))
+                    else:
+                        sel = st.selectbox("Sélectionner un test", options, format_func=lambda x: x[1])
+                        st.session_state["test_id_cible"] = sel[0]
+
+            # 🔒 Charger depuis df_filtered (PAS df)
+                        record = df_filtered[df_filtered["id"] == st.session_state["test_id_cible"]].iloc[0] \
+                            if not df_filtered.empty else None
+
+                        if record is None:
+                            st.warning("Impossible de charger l'enregistrement sélectionné.")
+                            st.button("❌ Fermer", on_click=lambda: st.session_state.update({"test_action": None, "test_id_cible": None}))
+                        else:
+                            with st.form("form_mod_test"):
+                                new_type = st.text_input("Type de carte", value=record["type_carte"])
+                                new_quantite = st.number_input("Quantité", value=int(record["quantite"]), min_value=1)
+                                new_quantite_test = st.number_input("Quantité à tester", value=int(record["quantite_a_tester"]), min_value=1)
+                                new_resultat = st.selectbox("Résultat", ["Réussite", "Échec"],
+                                                index=["Réussite", "Échec"].index(record["resultat"]))
+                                new_remarque = st.text_area("Remarque", value=record["remarque"] or "")
+                                submit_mod = st.form_submit_button("✅ Mettre à jour")
+                                if submit_mod:
+                                    supabase.table("controle_qualite").update({
+                                        "type_carte": new_type,
+                                        "quantite": new_quantite,
+                                        "quantite_a_tester": new_quantite_test,
+                                        "resultat": new_resultat,
+                                        "remarque": new_remarque
+                                    }).eq("id", st.session_state["test_id_cible"]).execute()
+                                    st.success("✅ Test modifié avec succès.")
+                                    st.session_state["test_action"] = None
+                                    st.session_state["test_id_cible"] = None
+                                    st.rerun()
+
+                        st.button("❌ Fermer", on_click=lambda: st.session_state.update({"test_action": None, "test_id_cible": None}))
+            
+# === PANNEAU SUPPRIMER (persistant) ===
+            elif st.session_state.get("test_action") == "delete":
+                st.markdown("#### 🗑️ Supprimer des tests")
+
+    # Cas où aucun enregistrement n'est visible avec les filtres
+                if df_filtered.empty:
+                    st.info("Aucun enregistrement à supprimer avec les filtres actuels.")
+                    st.button("❌ Fermer", use_container_width=True,
+                        on_click=lambda: st.session_state.update({"test_action": None, "test_id_cible": None}))
+                else:
+        # Options lisibles construites depuis le jeu filtré
+                    options = [
+                       (
+                            int(row["id"]),
+                            f"{row['nom_lot']} — {row['filiale']} — {row['type_carte']} "
+                            f"({row['quantite']}→{row['quantite_a_tester']}) — {row['resultat']} — {row['date_controle'].date()}"
+                        )
+                        for _, row in df_filtered.iterrows()
+                    ]
+
+                    if not options:
+                        st.info("Aucun test disponible pour suppression avec les filtres actuels.")
+                        st.button("❌ Fermer", use_container_width=True,
+                            on_click=lambda: st.session_state.update({"test_action": None, "test_id_cible": None}))
+                    else:
+            # Sélection d'un test à supprimer (persisté en session)
+                        sel = st.selectbox(
+                            "Sélectionner un test à supprimer",
+                            options,
+                            format_func=lambda x: x[1],
+                            key="select_test_delete"
+                        )
+                        st.session_state["test_id_cible"] = sel[0]
+
+            # Aperçu du test sélectionné (sécurité UX)
+                        record = df_filtered[df_filtered["id"] == st.session_state["test_id_cible"]].iloc[0]
+                        with st.container(border=True):
+                            st.write(
+                                f"**Lot :** {record['nom_lot']}  \n"
+                                f"**Filiale :** {record['filiale']}  \n"
+                                f"**Type de carte :** {record['type_carte']}  \n"
+                                f"**Quantité :** {int(record['quantite'])}  \n"
+                                f"**À tester :** {int(record['quantite_a_tester'])}  \n"
+                                f"**Résultat :** {record['resultat']}  \n"
+                                f"**Date :** {record['date_controle'].date()}  \n"
+                                f"**Remarque :** {record['remarque'] or '—'}"
+                            )
+
+                        colA, colB = st.columns(2)
+
+            # 🗑️ Suppression unitaire avec confirmation
+                        with colA:
+                            confirm_one = st.checkbox("Je confirme la suppression du test sélectionné", key="confirm_del_one")
+                            if st.button("🗑️ Supprimer le test sélectionné", type="primary",
+                                use_container_width=True, disabled=not confirm_one):
+                                try:
+                                    supabase.table("controle_qualite").delete().eq("id", int(st.session_state["test_id_cible"])).execute()
+                                    st.warning("🗑️ Test supprimé.")
+                                    st.session_state["test_action"] = None
+                                    st.session_state["test_id_cible"] = None
+                                    st.rerun()
+                                except Exception as e:
+                                    st.error(f"Erreur lors de la suppression : {e}")
+
+            # 🧹 Suppression en masse (tous les tests filtrés) avec confirmation
+                        with colB:
+                            confirm_all = st.checkbox("Je confirme la suppression de tous les tests filtrés", key="confirm_del_all")
+                            if st.button("🧹 Supprimer tous les tests filtrés", use_container_width=True, disabled=not confirm_all):
+                                try:
+                                    ids = [int(i) for i in df_filtered["id"].tolist()]
+                                    if ids:
+                                        supabase.table("controle_qualite").delete().in_("id", ids).execute()
+                                        st.warning(f"🧹 {len(ids)} tests supprimés (jeu filtré).")
+                                        st.session_state["test_action"] = None
+                                        st.session_state["test_id_cible"] = None
+                                        st.rerun()
+                                    else:
+                                        st.info("Aucun identifiant à supprimer.")
+                                except Exception as e:
+                                    st.error(f"Erreur lors de la suppression en masse : {e}")
+
+            # Bouton de fermeture du panneau
+                        st.button("❌ Fermer",
+                            on_click=lambda: st.session_state.update({"test_action": None, "test_id_cible": None}))
 
 
 # Bloc Conditionnement des cartes
