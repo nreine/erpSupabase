@@ -234,7 +234,6 @@ with st.sidebar:
         "🧪 Contrôle qualité",
         "🗂 Inventaire des tests",
         "📊 Graphiques et Analyses",
-        "📦 Conditionnement des cartes",
         "🗂 Inventaire des conditionnements",
         "⚙️ Gestion des agences",
         "🚚 Expédition des lots",
