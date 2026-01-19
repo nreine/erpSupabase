@@ -2974,7 +2974,7 @@ elif menu == "🔐 Gestion des comptes utilisateurs":
                        except Exception as e:
                              st.error(f"Erreur lors de l'ajout : {e}")
 
-                st.button("❌ Fermer", on_click=lambda: st.session_state.update({"user_action": None}))
+            st.button("❌ Fermer", on_click=lambda: st.session_state.update({"user_action": None}))
 
     # ==============================
     # 7) PANNEAU : MODIFIER
