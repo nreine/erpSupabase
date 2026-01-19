@@ -2971,7 +2971,7 @@ elif menu == "🔐 Gestion des comptes utilisateurs":
                                 st.success("✅ Utilisateur créé.")
                                 st.session_state["user_action"] = None
                                 st.rerun()
-                          except Exception as e:
+                       except Exception as e:
                              st.error(f"Erreur lors de l'ajout : {e}")
 
                 st.button("❌ Fermer", on_click=lambda: st.session_state.update({"user_action": None}))
