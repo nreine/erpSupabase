@@ -2464,7 +2464,7 @@ elif menu == "📇 Annuaire des livreurs":
                             new_prenom = st.text_input("Prénom", value=record["prenom"])
                             new_contact = st.text_input("Contact", value=record.get("contact", ""))
 
-                        submit_mod = st.form_submit_button("✅ Mettre à jour")
+                            submit_mod = st.form_submit_button("✅ Mettre à jour")
                             if submit_mod:
                                 try:
                             # éviter un doublon après modif (même triple agence+nom+prenom)
