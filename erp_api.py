@@ -918,7 +918,7 @@ elif menu == "📋 Visualisation des lots":
     key = st.secrets["supabase_key"]
     supabase = create_client(url, key)
 
-    st.markdown("## 📋 📋 Visualisation des lots")
+    st.markdown("## 📋 Visualisation des lots")
 
     
 # Pagination pour récupérer tous les lots
@@ -1143,8 +1143,7 @@ elif menu == "📋 Visualisation des lots":
                     with colB:
                         st.button("❌ Annuler", use_container_width=True,
                         on_click=lambda: st.session_state.update({"lot_action": None, "lot_id_cible": None}))
-
-        st.dataframe(df_filtered, use_container_width=True)
+                        
     else:
         st.warning("Aucun lot enregistré dans la base de données Supabase.")
 
