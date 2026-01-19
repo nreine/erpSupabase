@@ -1937,51 +1937,6 @@ elif menu == "🗂 Inventaire des conditionnements":
                 st.session_state["cond_id"] = None
                 st.rerun()
 
-        st.subheader("📋 Tableau des conditionnements")
-        colonnes = ["id", "nom_lot", "type_lot", "filiale", "type_emballage", "nombre_cartes", "packs", "remarque", "operateur", "date_conditionnement"]
-        st.dataframe(df_filtered[colonnes], use_container_width=True)
-
-        # Bouton global pour tout effacer
-        if st.button("🧹 Effacer tout le tableau"):
-            supabase.table("conditionnement").delete().execute()
-            st.warning("🧹 Tous les conditionnements ont été supprimés.")
-            st.rerun()
-
-        st.subheader("⚙️ Actions sur conditionnement")
-        for index, row in df_filtered.iterrows():
-            col1, col2, col3 = st.columns([6, 1, 1])
-            with col1:
-                st.write(f"🆔 {row['id']} — {row['nom_lot']} ({row['filiale']}) — {row['type_emballage']} — {row['nombre_cartes']} cartes")
-            with col2:
-                if st.button("✏️ Modifier", key=f"mod_{row['id']}"):
-                    st.session_state["mod_conditionnement_id"] = row["id"]
-                    st.rerun()
-            with col3:
-                if st.button("🗑 Supprimer", key=f"del_{row['id']}"):
-                    supabase.table("conditionnement").delete().eq("id", row["id"]).execute()
-                    st.warning(f"🗑 Conditionnement {row['id']} supprimé.")
-                    st.rerun()
-
-        # Formulaire de modification
-        if st.session_state.get("mod_conditionnement_id"):
-            mod_id = st.session_state["mod_conditionnement_id"]
-            record = df[df["id"] == mod_id].iloc[0]
-            with st.form("form_mod_conditionnement"):
-                new_remarque = st.text_input("📝 Nouvelle remarque", value=record["remarque"])
-                new_emballage = st.selectbox("📦 Type d'emballage", ["Paquet", "Enveloppe"], index=["Paquet", "Enveloppe"].index(record["type_emballage"]))
-                new_qte = st.number_input("🔢 Nombre de cartes", value=record["nombre_cartes"], min_value=1)
-                submit_mod = st.form_submit_button("✅ Enregistrer les modifications")
-                if submit_mod:
-                    supabase.table("conditionnement").update({
-                        "remarque": new_remarque,
-                        "type_emballage": new_emballage,
-                        "nombre_cartes": new_qte
-                    }).eq("id", mod_id).execute()
-                    st.success("✅ Conditionnement modifié avec succès.")
-                    st.session_state["mod_conditionnement_id"] = None
-                    st.rerun()
-
-
 #Module gestion des agences
 elif menu == "⚙️ Gestion des agences":
     st.markdown("## ⚙️ Gestion des agences de livraison")
