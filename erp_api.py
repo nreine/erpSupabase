@@ -918,7 +918,7 @@ elif menu == "📋 Visualisation des lots":
     key = st.secrets["supabase_key"]
     supabase = create_client(url, key)
 
-    st.markdown("## 📋 Liste des lots enregistrés")
+    st.markdown("## 📋 📋 Visualisation des lots")
 
     
 # Pagination pour récupérer tous les lots
@@ -962,6 +962,187 @@ elif menu == "📋 Visualisation des lots":
             (df["filiale"].isin(filiale_selection)) &
             (df["type_lot"].isin(type_selection))
         ]
+                
+# --- KPIs : Quantité des cartes par type de lot ---
+        with st.container(border=True):
+            st.subheader("Indicateurs de lots enregistrés")
+
+            if df_filtered.empty:
+                st.info("Aucun lot ne correspond aux filtres sélectionnés.")
+            else:
+    # Agréger les quantités par type de lot
+                grouped_types = (
+                    df_filtered.groupby("type_lot")["quantite"]
+                    .sum()
+                    .reset_index()
+                )
+
+    # S'assurer d'avoir toujours les 3 types affichés, même si un type est absent dans les filtres
+                types_cibles = ["Ordinaire", "Émission instantanée", "Renouvellement"]
+                quantites_dict = {t: 0 for t in types_cibles}
+                quantites_dict.update(dict(zip(grouped_types["type_lot"], grouped_types["quantite"])))
+
+    # Petit formatteur pour les valeurs (12 345)
+                def fmt(n):
+                    return f"{int(n):,}".replace(",", " ")
+
+    # Affichage des métriques (3 colonnes)
+                col1, col2 = st.columns(2)
+
+                col1.metric(
+                    label="🟦 Ordinaire",
+                    value=fmt(quantites_dict["Ordinaire"]), 
+                    delta=f"{fmt(quantites_dict["Ordinaire"])} cartes type : ordinaire",
+                    border=True
+                )
+                col2.metric(
+                    label="🟧 Émission instantanée",
+                    value=fmt(quantites_dict["Émission instantanée"]),
+                    delta=f"{fmt(quantites_dict["Émission instantanée"])} cartes type : émission instantanée",
+                    border=True
+                )
+
+                col3, col4 = st.columns(2)
+
+                col3.metric(
+                    label="🟨 Renouvellement",
+                    value=fmt(quantites_dict["Renouvellement"]),
+                    delta=f"{fmt(quantites_dict["Renouvellement"])} cartes type : renouvellement",
+                    border=True
+                )
+                col4.metric(
+                    label="🔢 Total cartes",
+                    value=fmt(df_filtered["quantite"].sum()),
+                    delta=f"{fmt(df_filtered["quantite"].sum())} cartes enregistrées",
+                    border=True
+                )
+        st.dataframe(df_filtered, use_container_width=True)
+        st.divider()
+
+# -- État de navigation local à la gestion des lots --
+        if "lot_action" not in st.session_state:
+            st.session_state["lot_action"] = None   # "add" | "edit" | "delete"
+        if "lot_id_cible" not in st.session_state:
+            st.session_state["lot_id_cible"] = None
+
+        with st.container(border=True):
+            st.markdown("### 🛠️ Effectuer une action sur les lots enregistrés")
+            ModifierL, SupprimerL = st.columns(2)
+
+    # ---------------------- ✏️ MODIFIER ----------------------
+            if ModifierL.button("Modifier Lot", use_container_width=True):
+                st.session_state["lot_action"] = "edit"
+                st.session_state["lot_id_cible"] = None
+                st.rerun()
+
+    # ---------------------- 🗑️ SUPPRIMER ----------------------
+            if SupprimerL.button("Supprimer Lot", use_container_width=True):
+                st.session_state["lot_action"] = "delete"
+                st.session_state["lot_id_cible"] = None
+                st.rerun()
+
+# === PANNEAUX D'ACTIONS SELON LE CONTEXTE ===
+
+# ---------- ✏️ MODIFIER ----------
+            elif st.session_state["lot_action"] == "edit":
+                st.markdown("#### ✏️ Modifier un lot existant")
+
+                if df_filtered.empty:
+                    st.info("Aucun lot à modifier avec les filtres actuels.")
+                    st.button("❌ Fermer", on_click=lambda: st.session_state.update({"lot_action": None, "lot_id_cible": None}))
+                else:
+        # Sélection de la cible parmi le tableau filtré (cohérent avec ta pratique)
+                    options = {
+                        f"{int(row['id'])} - {row['nom_lot']}": int(row["id"])
+                            for _, row in df_filtered.iterrows()
+                    }
+                    sel_label = st.selectbox("Sélectionnez le lot à modifier", list(options.keys()))
+                    lot_id = options[sel_label]
+
+        # Charge la ligne complète du lot dans la table
+                    lot_data = df[df["id"] == lot_id].iloc[0] if not df.empty else None
+                    if lot_data is None:
+                        st.warning("Impossible de charger le lot sélectionné.")
+                        st.button("❌ Fermer", on_click=lambda: st.session_state.update({"lot_action": None, "lot_id_cible": None}))
+                    else:
+                        with st.form("form_modification_vs"):
+                            col1, col2 = st.columns(2)
+                            with col1:
+                                new_nom = st.text_input("Nom du lot", value=lot_data["nom_lot"])
+                                new_type = st.selectbox(
+                                    "Type de lot",
+                                    ["Ordinaire", "Émission instantanée", "Renouvellement"],
+                                    index=["Ordinaire", "Émission instantanée", "Renouvellement"].index(lot_data["type_lot"])
+                                )
+                                new_quantite = st.number_input("Quantité totale", min_value=1, value=int(lot_data["quantite"]))
+                                new_date_prod = st.date_input("Date de production", value=pd.to_datetime(lot_data["date_production"]).date())
+                            with col2:
+                                new_date_enr = st.date_input("Date d'enregistrement", value=pd.to_datetime(lot_data["date_enregistrement"]).date())
+                                new_filiale = st.selectbox(
+                                    "Filiale",
+                                    ["Burkina Faso", "Mali", "Niger", "Côte d'Ivoire", "Sénégal", "Bénin", "Togo", "Guinée Bissau", "Guinée Conakry"],
+                                       index=["Burkina Faso", "Mali", "Niger", "Côte d'Ivoire", "Sénégal", "Bénin", "Togo", "Guinée Bissau", "Guinée Conakry"].index(lot_data["filiale"])
+                                    )
+                                new_impression = st.radio(
+                                    "Impression de PIN ?",
+                                    ["Oui", "Non"],
+                                    index=["Oui", "Non"].index(lot_data["impression_pin"])
+                                )
+                                default_pin = int(lot_data["nombre_pin"]) if lot_data["impression_pin"] == "Oui" else 1
+                                new_nombre_pin = st.number_input("Nombre de PIN", min_value=1, value=default_pin) if new_impression == "Oui" else 0
+
+                # Recalcule le nombre de cartes à tester (même règle)
+                                new_cartes_test = math.ceil(new_quantite / 50)
+                                submit_mod = st.form_submit_button("✅ Enregistrer les modifications")
+                                if submit_mod:
+                                    supabase.table("lots").update({
+                                        "nom_lot": new_nom,
+                                        "type_lot": new_type,
+                                        "quantite": int(new_quantite),
+                                        "date_production": str(new_date_prod),
+                                        "date_enregistrement": str(new_date_enr),
+                                        "filiale": new_filiale,
+                                        "impression_pin": new_impression,
+                                        "nombre_pin": int(new_nombre_pin) if new_impression == "Oui" else 0,
+                                        "cartes_a_tester": int(new_cartes_test)
+                                    }).eq("id", lot_id).execute()
+                                    st.success("✅ Lot modifié avec succès.")
+                                    st.session_state["lot_action"] = None
+                                    st.session_state["lot_id_cible"] = None
+                                    st.rerun()
+                    st.button("❌ Fermer", on_click=lambda: st.session_state.update({"lot_action": None, "lot_id_cible": None}))
+
+# ---------- 🗑️ SUPPRIMER ----------
+            elif st.session_state["lot_action"] == "delete":
+                st.markdown("#### 🗑️ Supprimer un lot")
+
+                if df_filtered.empty:
+                    st.info("Aucun lot à supprimer avec les filtres actuels.")
+                    st.button("❌ Fermer", on_click=lambda: st.session_state.update({"lot_action": None, "lot_id_cible": None}))
+                else:
+                    options = {
+                        f"{int(row['id'])} - {row['nom_lot']}": int(row["id"])
+                        for _, row in df_filtered.iterrows()
+                    }
+                    sel_label = st.selectbox("Sélectionnez le lot à supprimer", list(options.keys()))
+                    lot_id = options[sel_label]
+
+        # Affiche un récap succinct
+                    lot_data = df[df["id"] == lot_id].iloc[0] if not df.empty else None
+                    if lot_data is not None:
+                        st.write(f"📦 **{lot_data['nom_lot']}** — {lot_data['filiale']} — {lot_data['type_lot']} — {int(lot_data['quantite'])} cartes")
+
+                    colA, colB = st.columns(2)
+                    with colA:
+                        if st.button("🗑️ Supprimer définitivement", type="primary", use_container_width=True):
+                            supabase.table("lots").delete().eq("id", lot_id).execute()
+                            st.warning("🗑️ Lot supprimé.")
+                            st.session_state["lot_action"] = None
+                            st.session_state["lot_id_cible"] = None
+                            st.rerun()
+                    with colB:
+                        st.button("❌ Annuler", use_container_width=True,
+                        on_click=lambda: st.session_state.update({"lot_action": None, "lot_id_cible": None}))
 
         st.dataframe(df_filtered, use_container_width=True)
     else:
