@@ -2878,10 +2878,10 @@ elif menu == "🔐 Gestion des comptes utilisateurs":
         
         colE, colF = st.columns(2)
         with colE:
-            colE.metric("👥 Utilisateurs", total, total, border=True)
-            colE.metric("✅ Compte actif", actifs, actifs, border=True)
+            colE.metric("👥 Utilisateurs", total, f"{total} utilisateurs", border=True)
+            colE.metric("✅ Compte actif", actifs, f"{actifs} comptes actifs", border=True)
         with colF:
-            colF.metric("⛔ Compte inactif", inactifs, inactifs, border=True)
+            colF.metric("⛔ Compte inactif", inactifs, f"{inactifs} comptes inactifs", border=True)
             colF.metric("🔐 Répartition des comptes", f"admin:{admins}", f"operateur:{operateurs}", border=True)
 
 
