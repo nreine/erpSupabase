@@ -1710,6 +1710,7 @@ if menu == "📦 Conditionnement des cartes":
 #Inventaire de conditionnements
 elif menu == "🗂 Inventaire des conditionnements":
     st.markdown("## 🗂 Inventaire des conditionnements")
+    st.divider()
 
 # Pagination pour récupérer tous les conditionnements
     page_size = 1000
@@ -1762,6 +1763,179 @@ elif menu == "🗂 Inventaire des conditionnements":
             (df["type_emballage"].isin(emballage_selection)) &
             (df["operateur"].isin(operateur_selection))
         ]
+                        
+# --- KPIs Inventaire des conditionnements ---
+    with st.container(border=True):
+        #st.subheader("Indicateurs des conditionnements")
+
+        if df_filtered.empty:
+            col1, col2, col3 = st.columns(3)
+            col1.metric("Total conditionnements", 0, border=True)
+            col2.metric("Paquets conditionnés", 0, border=True)
+            col3.metric("Enveloppes conditionnées", 0, border=True)
+        else:
+    # Total des enregistrements de conditionnement (après filtres)
+            total_conditionnements = len(df_filtered)
+
+    # Comptes par type d'emballage
+        nb_paquets = (df_filtered["type_emballage"].str.lower() == "paquet").sum()
+        nb_enveloppes = (df_filtered["type_emballage"].str.lower() == "enveloppe").sum()
+
+    # (Optionnel) totaux de cartes par type, si vous voulez les afficher en tooltip
+        total_cartes_paquets = df_filtered.loc[
+            df_filtered["type_emballage"].str.lower() == "paquet", "nombre_cartes"
+        ].sum()
+        total_cartes_enveloppes = df_filtered.loc[
+            df_filtered["type_emballage"].str.lower() == "enveloppe", "nombre_cartes"
+        ].sum()
+
+        col1, col2, col3 = st.columns(3)
+        col1.metric("🔢Total conditionnements", f"{total_conditionnements:,}".replace(",", " "), f"{total_conditionnements} conditionnements", border=True)
+        col2.metric(
+            "📦Paquets conditionnés",
+            f"{nb_paquets:,}".replace(",", " "), f"{nb_paquets} paquets utilisés",
+            help=f"Total cartes en paquets : {total_cartes_paquets:,}".replace(",", " "),
+            border=True
+        )
+        col3.metric(
+            "✉️Enveloppes conditionnées",
+            f"{nb_enveloppes:,}".replace(",", " "), f"{nb_enveloppes} enveloppes utilisés",
+            help=f"Total cartes en enveloppes : {total_cartes_enveloppes:,}".replace(",", ""),
+            border=True
+        )
+
+
+    colonnes = ["id", "nom_lot", "type_lot", "filiale", "type_emballage", "nombre_cartes", "packs", "remarque", "operateur", "date_conditionnement"]
+    st.dataframe(df_filtered[colonnes], use_container_width=True)
+
+        # Bouton global pour tout effacer
+    if st.button("🧹 Effacer le contenu du tableau"):
+        supabase.table("conditionnement").delete().execute()
+        st.warning("🧹 Tous les conditionnements ont été supprimés.")
+        st.rerun()
+      
+# ==============================
+# 🛠️ Gestion des conditionnements
+# ==============================
+    st.divider()
+
+# État local pour les actions
+    if "cond_action" not in st.session_state:
+        st.session_state["cond_action"] = None   # add | edit | delete
+    if "cond_id" not in st.session_state:
+        st.session_state["cond_id"] = None
+
+    with st.container(border=True):
+        st.markdown("### 🛠️ Effectuer une action")
+        ModifierC, SupprimerC = st.columns(2)
+
+    # ✏️ MODIFIER
+        if ModifierC.button("Modifier un conditionnement", use_container_width=True):
+            st.session_state["cond_action"] = "edit"
+            st.session_state["cond_id"] = None
+            st.rerun()
+
+    # 🗑️ SUPPRIMER
+        if SupprimerC.button("Supprimer un conditionnement", use_container_width=True):
+            st.session_state["cond_action"] = "delete"
+            st.session_state["cond_id"] = None
+            st.rerun()
+   
+        elif st.session_state["cond_action"] == "edit":
+            st.markdown("#### ✏️ Modifier un conditionnement")
+
+            if df_filtered.empty:
+                st.info("Aucun conditionnement à modifier avec les filtres actuels.")
+            else:
+                options = {
+                    f"{row['id']} — {row['nom_lot']} — {row['filiale']} — {row['type_emballage']}":
+                        int(row["id"])
+                        for _, row in df_filtered.iterrows()
+                }
+
+                selection = st.selectbox(
+                    "Sélectionner le conditionnement à modifier",
+                    list(options.keys())
+                )
+                cond_id = options[selection]
+
+                record = df_filtered[df_filtered["id"] == cond_id].iloc[0]
+
+                with st.form("form_mod_conditionnement"):
+                    new_remarque = st.text_input("Remarque", value=record["remarque"])
+                    new_emballage = st.selectbox(
+                        "Type d'emballage",
+                        ["Paquet", "Enveloppe"],
+                        index=["Paquet", "Enveloppe"].index(record["type_emballage"])
+                    )
+                    new_qte = st.number_input(
+                        "Nombre de cartes",
+                        min_value=1,
+                        value=int(record["nombre_cartes"])
+                    )
+
+                    submit = st.form_submit_button("✅ Enregistrer les modifications")
+
+                    if submit:
+                        supabase.table("conditionnement").update({
+                            "remarque": new_remarque,
+                            "type_emballage": new_emballage,
+                            "nombre_cartes": int(new_qte)
+                        }).eq("id", cond_id).execute()
+
+                        st.success("✅ Conditionnement modifié avec succès.")
+                        st.session_state["cond_action"] = None
+                        st.session_state["cond_id"] = None
+                        st.rerun()
+
+            if st.button("❌ Fermer"):
+                st.session_state["cond_action"] = None
+                st.session_state["cond_id"] = None
+                st.rerun()
+                
+        elif st.session_state["cond_action"] == "delete":
+            st.markdown("#### 🗑️ Supprimer des conditionnements")
+
+            if df_filtered.empty:
+                st.info("Aucun conditionnement à supprimer avec les filtres actuels.")
+            else:
+                options = {
+                    f"{row['id']} — {row['nom_lot']} — {row['filiale']} — {row['type_emballage']}":
+                    int(row["id"])
+                    for _, row in df_filtered.iterrows()
+                }
+
+                selection = st.selectbox(
+                    "Sélectionner un conditionnement à supprimer",
+                    list(options.keys())
+                )
+                cond_id = options[selection]
+
+                col1, col2 = st.columns(2)
+
+        # Suppression unitaire
+                with col1:
+                    if st.button("🗑️ Supprimer le conditionnement sélectionné", type="primary", use_container_width=True):
+                        supabase.table("conditionnement").delete().eq("id", cond_id).execute()
+                        st.warning("🗑️ Conditionnement supprimé.")
+                        st.session_state["cond_action"] = None
+                        st.session_state["cond_id"] = None
+                        st.rerun()
+
+        # Suppression en masse (tout le jeu filtré)
+                with col2:
+                    if st.button("🧹 Supprimer tous les conditionnements filtrés", use_container_width=True):
+                        ids = [int(i) for i in df_filtered["id"].tolist()]
+                        supabase.table("conditionnement").delete().in_("id", ids).execute()
+                        st.warning(f"🧹 {len(ids)} conditionnements supprimés.")
+                        st.session_state["cond_action"] = None
+                        st.session_state["cond_id"] = None
+                        st.rerun()
+
+            if st.button("❌ Fermer"):
+                st.session_state["cond_action"] = None
+                st.session_state["cond_id"] = None
+                st.rerun()
 
         st.subheader("📋 Tableau des conditionnements")
         colonnes = ["id", "nom_lot", "type_lot", "filiale", "type_emballage", "nombre_cartes", "packs", "remarque", "operateur", "date_conditionnement"]
