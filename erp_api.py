@@ -1581,6 +1581,7 @@ elif menu == "🗂 Inventaire des tests":
 # Bloc Conditionnement des cartes
 if menu == "📦 Conditionnement des cartes":
     st.markdown("## 📦 Conditionnement des cartes")
+    st.divider()
 
     # Sélection de la date
     selected_date = st.date_input("📅 Sélectionnez une date", value=date.today())
