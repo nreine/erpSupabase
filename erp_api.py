@@ -1313,9 +1313,6 @@ elif menu == "🧪 Contrôle qualité":
             st.success("✅ Contrôle qualité enregistré avec succès.")
             st.rerun()
    
-# ================================
-# 📋 FICHE DE CONTRÔLE QUALITÉ — RENDU AMÉLIORÉ
-# ================================
         if types_selectionnes:
     # Récupération des infos du lot sélectionné
             lot_info = supabase.table("lots").select("*").eq("id", lot_id).execute().data
@@ -1559,8 +1556,6 @@ elif menu == "🧪 Contrôle qualité":
                 mime="application/pdf",
                 use_container_width=True
             )
-
-
 
 elif menu == "🗂 Inventaire des tests":
     st.markdown("## 🗂 Inventaire du contrôle qualité")
