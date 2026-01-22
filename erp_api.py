@@ -1312,13 +1312,254 @@ elif menu == "🧪 Contrôle qualité":
                 }).execute()
             st.success("✅ Contrôle qualité enregistré avec succès.")
             st.rerun()
+   
+# ================================
+# 📋 FICHE DE CONTRÔLE QUALITÉ — RENDU AMÉLIORÉ
+# ================================
+        if types_selectionnes:
+    # Récupération des infos du lot sélectionné
+            lot_info = supabase.table("lots").select("*").eq("id", lot_id).execute().data
+            lot_info = lot_info[0] if lot_info else {}
 
-    # Résumé
-    if types_selectionnes:
-        st.subheader("📋 Résumé des tests")
-        for type_carte in types_selectionnes:
-            st.write(f"{type_carte} : {quantites[type_carte]} cartes → {quantites_a_tester[type_carte]} à tester")
-        st.write(f"🔢 Total des cartes à tester : {total_a_tester}")
+            st.markdown("## 📋 Fiche complète de contrôle qualité")
+            st.divider()
+
+    # --- HEADER LOT ---
+            with st.container(border=True):
+                st.markdown(f"""
+                    <h3>📦 Lot : <strong>{lot_info.get('nom_lot','')}</strong></h3>
+                    <p>
+                        <strong>ID :</strong> {lot_id}<br>
+                        <strong>Filiale :</strong> {lot_info.get('filiale','')}<br>
+                        <strong>Type de lot :</strong> {lot_info.get('type_lot','')}<br>
+                        <strong>Quantité de carte dans le lot :</strong> {lot_info.get('quantite','')} cartes<br>
+                        <strong>Date production :</strong> {lot_info.get('date_production','')}<br>
+                        <strong>Date enregistrement :</strong> {lot_info.get('date_enregistrement','')}<br>
+                        <strong>Impression PIN :</strong> {lot_info.get('impression_pin','')}<br>
+                        <strong>Nombre PIN :</strong> {lot_info.get('nombre_pin','0')}
+                    </p>
+                """, unsafe_allow_html=True)
+
+            st.divider()
+
+    # --- TABLEAU DÉTAILLÉ DU CONTRÔLE ---
+            recap_data = []
+            for type_carte in types_selectionnes:
+                recap_data.append({
+                    "Type de carte": type_carte,
+                    "Quantité": quantites[type_carte],
+                    "À tester": quantites_a_tester[type_carte],
+                    "Résultat": resultat_test,
+                })
+
+            st.subheader("🧪 Détails des tests effectués")
+            st.table(recap_data)
+
+    # --- TOTAL ---
+            st.info(f"🔢 **Total des cartes à tester : {total_a_tester}**")
+
+    # --- REMARQUES ---
+            st.warning(f"📝 **Remarque :** {remarque or 'Aucune'}")
+
+    # --- BADGE DE RÉSULTAT ---
+            color = "green" if resultat_test == "Reussite" else "red"
+            st.markdown(
+                f"<h3 style='color:{color};text-align:center;'>Résultat final : {resultat_test.upper()}</h3>",
+                unsafe_allow_html=True
+            )
+
+    # --- DATE ---
+            st.caption(f"📅 Contrôle réalisé le : {date.today()}")
+
+
+# 1) Récupérer proprement les infos du lot (lot_id existe déjà dans ta page Contrôle qualité)
+            _lot_rows = supabase.table("lots").select("*").eq("id", lot_id).execute().data or []
+            lot_info = _lot_rows[0] if _lot_rows else {}
+            lot_info.setdefault("id", lot_id)  # au cas où
+
+# 2) Reconstruire le tableau recap à partir des sélections actuelles
+            recap_data = []
+            for type_carte in types_selectionnes:
+                recap_data.append({
+                    "Type de carte": type_carte,
+                    "Quantité": int(quantites[type_carte]),
+                    "À tester": int(quantites_a_tester[type_carte]),
+                    "Résultat": resultat_test,
+                })
+
+# 3) Petite fonction utilitaire : échapper les parenthèses pour la syntaxe PDF
+            def _pdf_escape(text: str) -> str:
+    # Le contenu texte PDF doit échapper les (), et \\
+                if text is None:
+                    return ""
+                return str(text).replace("\\", "\\\\").replace("(", "\\(").replace(")", "\\)")
+
+# 4) Générateur PDF minimaliste (texte) — 100% compatible Streamlit Cloud
+            def generate_raw_pdf(lot_info, recap_data, resultat_test, remarque, total_a_tester):
+    # Dimensions A4 en points : 595 x 842
+                lines = []
+
+                def T(text, x, y, size=11, bold=False):
+        # Écrit une ligne de texte (Helvetica / Helvetica-Bold) à (x,y)
+                    font = "Helvetica-Bold" if bold else "Helvetica"
+                    text = _pdf_escape(text)
+                    return [
+                        "BT",
+                        f"/F1 {size} Tf" if not bold else f"/F2 {size} Tf",
+                        f"{x} {y} Td",
+                        f"({text}) Tj",
+                        "ET",
+                    ]
+
+    # --- Contenu de la page (une seule page) ---
+                y = 800
+                lines += T("FICHE DE CONTROLE QUALITE", 50, y, size=16, bold=True); y -= 30
+
+    # Bloc infos lot
+                lines += T("Informations du lot", 50, y, size=12, bold=True); y -= 18
+                infos = [
+                    f"Nom du lot : {lot_info.get('nom_lot','')}",
+                    f"ID du lot : {lot_info.get('id','')}",
+                    f"Filiale : {lot_info.get('filiale','')}",
+                    f"Type de lot : {lot_info.get('type_lot','')}",
+                    f"Quantité totale : {lot_info.get('quantite','')} cartes",
+                    f"Date production : {lot_info.get('date_production','')}",
+                    f"Date enregistrement : {lot_info.get('date_enregistrement','')}",
+                    f"Impression PIN : {lot_info.get('impression_pin','')}",
+                    f"Nombre PIN : {lot_info.get('nombre_pin','0')}",
+                ]
+                for line in infos:
+                    lines += T(line, 50, y); y -= 14
+
+                y -= 8
+                lines += T("Details des tests", 50, y, size=12, bold=True); y -= 18
+
+    # En‑têtes colonnes
+                lines += T("Type de carte", 50, y, bold=True)
+                lines += T("Quantite",      260, y, bold=True)
+                lines += T("A tester",      350, y, bold=True)
+                lines += T("Resultat",      430, y, bold=True)
+                y -= 14
+
+    # Lignes du "tableau" (simple alignement de texte)
+                for row in recap_data:
+                    lines += T(str(row["Type de carte"]), 50, y)
+                    lines += T(str(row["Quantité"]),      260, y)
+                    lines += T(str(row["À tester"]),      350, y)
+                    lines += T(str(row["Résultat"]),      430, y)
+                    y -= 14
+
+                y -= 10
+                lines += T(f"Total cartes à tester : {int(total_a_tester)}", 50, y, bold=True); y -= 20
+
+    # Remarque
+                lines += T("Remarque", 50, y, size=12, bold=True); y -= 16
+                lines += T(remarque or "RAS", 50, y); y -= 24
+
+    # Résultat final + Date
+                res = f"Resultat final : {resultat_test.upper()}"
+                lines += T(res, 50, y, size=13, bold=True); y -= 18
+                lines += T(f"Date du contrôle : {date.today()}", 50, y); y -= 14
+
+    # --- Construction du PDF ---
+    # 1) Ressources : polices
+                font_obj_helv = (
+                    "5 0 obj\n"
+                    "<< /Type /Font /Subtype /Type1 /BaseFont /Helvetica >>\n"
+                    "endobj\n"
+                )
+                font_obj_helv_b = (
+                    "6 0 obj\n"
+                    "<< /Type /Font /Subtype /Type1 /BaseFont /Helvetica-Bold >>\n"
+                    "endobj\n"
+                )
+
+    # 2) Contenu (stream)
+                content_stream = "\n".join(lines).encode("latin-1", "replace")
+                length = len(content_stream)
+                content_obj = (
+                    "4 0 obj\n"
+                    f"<< /Length {length} >>\n"
+                    "stream\n"
+                ).encode("latin-1") + content_stream + b"\nendstream\nendobj\n"
+
+    # 3) Page + Pages + Catalog
+                page_obj = (
+                    "3 0 obj\n"
+                    "<< /Type /Page /Parent 2 0 R /MediaBox [0 0 595 842]\n"
+                    "/Resources << /Font << /F1 5 0 R /F2 6 0 R >> >>\n"
+                    "/Contents 4 0 R >>\n"
+                    "endobj\n"
+                )
+                pages_obj = (
+                    "2 0 obj\n"
+                    "<< /Type /Pages /Kids [3 0 R] /Count 1 >>\n"
+                    "endobj\n"
+                )
+                catalog_obj = (
+                    "1 0 obj\n"
+                    "<< /Type /Catalog /Pages 2 0 R >>\n"
+                    "endobj\n"
+                )
+
+    # 4) Assemblage + xref
+                parts = []
+                parts.append(b"%PDF-1.4\n")
+                offsets = []
+
+                def put(part: bytes):
+                    offsets.append(sum(len(p) for p in parts))
+                    parts.append(part)
+
+                put(catalog_obj.encode("latin-1"))
+                put(pages_obj.encode("latin-1"))
+                put(page_obj.encode("latin-1"))
+                put(content_obj)
+                put(font_obj_helv.encode("latin-1"))
+                put(font_obj_helv_b.encode("latin-1"))
+
+    # xref
+                xref_pos = sum(len(p) for p in parts)
+                xref = ["xref", f"0 {len(offsets)+1}", "0000000000 65535 f "]
+                for off in offsets:
+                    xref.append(f"{off:010d} 00000 n ")
+                xref_block = ("\n".join(xref) + "\n").encode("latin-1")
+                parts.append(xref_block)
+
+    # trailer
+                trailer = (
+                    "trailer\n"
+                    f"<< /Size {len(offsets)+1} /Root 1 0 R >>\n"
+                    "startxref\n"
+                    f"{xref_pos}\n"
+                    "%%EOF\n"
+                ).encode("latin-1")
+                parts.append(trailer)
+
+    # Buffer final
+                buffer = io.BytesIO()
+                for p in parts:
+                    buffer.write(p)
+                buffer.seek(0)
+                return buffer
+
+# 5) Génération + bouton
+            pdf_buffer = generate_raw_pdf(
+                lot_info=lot_info,
+                recap_data=recap_data,
+                resultat_test=resultat_test,
+                remarque=remarque,
+                total_a_tester=total_a_tester
+            )
+
+            st.download_button(
+                label="📄 Télécharger la fiche en PDF",
+                data=pdf_buffer,
+                file_name=f"fiche_controle_lot_{lot_id}.pdf",
+                mime="application/pdf",
+                use_container_width=True
+            )
+
 
 
 elif menu == "🗂 Inventaire des tests":
