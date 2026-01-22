@@ -1313,7 +1313,7 @@ elif menu == "🧪 Contrôle qualité":
             st.success("✅ Contrôle qualité enregistré avec succès.")
             st.rerun()
    
-        if types_selectionnes:
+    if types_selectionnes:
     # Récupération des infos du lot sélectionné
             lot_info = supabase.table("lots").select("*").eq("id", lot_id).execute().data
             lot_info = lot_info[0] if lot_info else {}
