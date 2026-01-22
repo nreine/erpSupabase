@@ -1448,7 +1448,7 @@ elif menu == "🧪 Contrôle qualité":
                     y -= 14
 
                 y -= 10
-                lines += T(f"Total cartes à tester : {int(total_a_tester)}", 50, y, bold=True); y -= 20
+                lines += T(f"Total des cartes tests : {int(total_a_tester)}", 50, y, bold=True); y -= 20
 
     # Remarque
                 lines += T("Remarque", 50, y, size=12, bold=True); y -= 16
