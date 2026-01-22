@@ -14,7 +14,8 @@ from sklearn.linear_model import LinearRegression
 import streamlit as st
 import streamlit.components.v1 as components
 from numpy.random import default_rng as rng
-
+import io
+from datetime import date
 st.set_page_config(
     page_title="DSTM",
     page_icon="Designer.png"  # ton icône
