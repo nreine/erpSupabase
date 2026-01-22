@@ -1295,7 +1295,7 @@ elif menu == "🧪 Contrôle qualité":
         total_a_tester += test
 
     remarque = st.text_area("Remarques / Anomalies", value="RAS")
-    resultat_test = st.radio("Résultat du test :", ["Réussite", "Échec"], key="resultat_test")
+    resultat_test = st.radio("Résultat du test :", ["Reussite", "Échec"], key="resultat_test")
     
     if st.button("Enregistrer le contrôle qualité"):             
             for type_carte in types_selectionnes:
